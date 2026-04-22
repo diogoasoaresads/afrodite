@@ -9,6 +9,7 @@ import { getProductById, getRelatedProducts, categories } from '@/lib/products'
 import { formatPrice, formatInstallments } from '@/lib/formatters'
 import { useCartStore } from '@/lib/store'
 import ProductCard from '@/components/ProductCard'
+import SizeGuideModal from '@/components/SizeGuideModal'
 
 export default function ProductPage({ params }: { params: { id: string } }) {
   const product = getProductById(params.id)
@@ -21,6 +22,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
   const [quantity, setQuantity] = useState(1)
   const [selectedSize, setSelectedSize] = useState('')
   const [added, setAdded] = useState(false)
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false)
 
   const { addItem } = useCartStore()
 
@@ -120,7 +122,12 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               <div className="mt-8">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-cream text-sm tracking-wider uppercase">Tamanho</span>
-                  <button className="text-gold-400 text-xs hover:underline">Guia de Tamanhos</button>
+                  <button
+                    onClick={() => setSizeGuideOpen(true)}
+                    className="text-gold-400 text-xs hover:underline transition-colors"
+                  >
+                    Guia de Tamanhos
+                  </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {sizes.map(size => (
@@ -228,6 +235,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
           </div>
         </section>
       )}
+
+      {/* Modal Guia de Tamanhos */}
+      {sizeGuideOpen && <SizeGuideModal onClose={() => setSizeGuideOpen(false)} />}
     </div>
   )
 }
