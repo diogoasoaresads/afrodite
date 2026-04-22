@@ -1,16 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { saveDBProduct, getDBProducts } from '@/lib/db'
+import { products as staticProducts } from '@/lib/products'
 import { ADMIN_COOKIE, isValidSession } from '@/lib/admin-auth'
 
 function checkAuth(req: NextRequest) {
-  const session = req.cookies.get(ADMIN_COOKIE)?.value
-  return isValidSession(session)
+  return isValidSession(req.cookies.get(ADMIN_COOKIE)?.value)
 }
 
 export async function GET(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  const products = await getDBProducts()
-  return NextResponse.json(products)
+
+  const dbProducts = await getDBProducts()
+  const dbIds = new Set(dbProducts.map(p => p.id))
+
+  // Retorna DB primeiro, estáticos que não foram sobrescritos depois
+  const all = [
+    ...dbProducts,
+    ...staticProducts.filter(p => !dbIds.has(p.id)).map(p => ({
+      ...p,
+      createdAt: '—',
+      updatedAt: '—',
+    })),
+  ]
+
+  return NextResponse.json(all)
 }
 
 export async function POST(req: NextRequest) {

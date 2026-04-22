@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
-import CartDrawer from '@/components/CartDrawer'
+import { ThemeProvider } from '@/lib/theme'
+import ConditionalShell from '@/components/ConditionalShell'
 
 export const metadata: Metadata = {
   title: 'Afrodite Joias | Beleza que Dura para Sempre',
@@ -18,12 +17,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-theme="dark">
       <body>
-        <Header />
-        <CartDrawer />
-        <main>{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <ConditionalShell>
+            <main>{children}</main>
+          </ConditionalShell>
+        </ThemeProvider>
       </body>
     </html>
   )

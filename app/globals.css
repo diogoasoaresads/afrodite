@@ -4,11 +4,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES
+════════════════════════════════════════════ */
 :root {
   --font-cormorant: 'Cormorant Garamond', Georgia, serif;
   --font-jost: 'Jost', system-ui, sans-serif;
+
+  /* Dark mode (padrão) */
+  --c-bg:     #0a0a0a;
+  --c-surf:   #141414;
+  --c-surf2:  #212121;
+  --c-border: #424242;
+  --c-text:   #F5F0E8;
+  --c-nav:    #e0e0e0;
+  --c-muted1: #bdbdbd;
+  --c-muted2: #9e9e9e;
+  --c-muted3: #757575;
+  --c-muted4: #616161;
+  --c-muted5: #424242;
 }
 
+[data-theme="light"] {
+  --c-bg:     #FAF8F5;
+  --c-surf:   #F0EAD6;
+  --c-surf2:  #E5D9BE;
+  --c-border: #CFC3A0;
+  --c-text:   #1A1515;
+  --c-nav:    #3a3030;
+  --c-muted1: #5a5050;
+  --c-muted2: #7a7070;
+  --c-muted3: #9a9090;
+  --c-muted4: #bab0a8;
+  --c-muted5: #d4ccc0;
+}
+
+/* ════════════════════════════════════════════
+   BASE
+════════════════════════════════════════════ */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -20,34 +53,88 @@ html {
 }
 
 body {
-  background-color: #0a0a0a;
-  color: #F5F0E8;
+  background-color: var(--c-bg);
+  color: var(--c-text);
   font-family: var(--font-jost);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Scrollbar personalizada */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #141414;
-}
-::-webkit-scrollbar-thumb {
-  background: #c9912a;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #dca83e;
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--c-surf); }
+::-webkit-scrollbar-thumb { background: #c9912a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #dca83e; }
+
+::selection { background: #c9912a33; color: var(--c-text); }
+
+/* ════════════════════════════════════════════
+   LIGHT THEME — Override Tailwind utilities
+════════════════════════════════════════════ */
+
+/* Backgrounds */
+[data-theme="light"] .bg-dark-900  { background-color: #FAF8F5 !important; }
+[data-theme="light"] .bg-dark-800  { background-color: #F0EAD6 !important; }
+[data-theme="light"] .bg-dark-700  { background-color: #E5D9BE !important; }
+[data-theme="light"] .bg-dark-600  { background-color: #CFC3A0 !important; }
+
+/* Semi-transparent backgrounds */
+[data-theme="light"] .bg-dark-800\/50 { background-color: rgba(240,234,214,0.5) !important; }
+[data-theme="light"] .bg-dark-700\/30 { background-color: rgba(229,217,190,0.3) !important; }
+
+/* Text colors */
+[data-theme="light"] .text-cream    { color: #1A1515 !important; }
+[data-theme="light"] .text-dark-200 { color: #3a3030 !important; }
+[data-theme="light"] .text-dark-300 { color: #5a5050 !important; }
+[data-theme="light"] .text-dark-400 { color: #7a7070 !important; }
+[data-theme="light"] .text-dark-500 { color: #9a9090 !important; }
+[data-theme="light"] .text-dark-600 { color: #bab0a8 !important; }
+
+/* Borders */
+[data-theme="light"] .border-dark-600 { border-color: #CFC3A0 !important; }
+[data-theme="light"] .border-dark-700 { border-color: #DDD3B4 !important; }
+[data-theme="light"] .border-gold-500\/10 { border-color: rgba(201,145,42,0.2) !important; }
+[data-theme="light"] .border-gold-500\/20 { border-color: rgba(201,145,42,0.3) !important; }
+
+/* Inputs, selects, textareas */
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background-color: #FFFFFF !important;
+  color: #1A1515 !important;
+  border-color: #CFC3A0 !important;
 }
 
-/* Seleção de texto */
-::selection {
-  background: #c9912a33;
-  color: #F5F0E8;
+[data-theme="light"] option {
+  background-color: #FFFFFF;
+  color: #1A1515;
 }
 
+[data-theme="light"] ::placeholder { color: #9a9090 !important; }
+
+/* Overlay de imagem do hero — um pouco mais suave no light */
+[data-theme="light"] .bg-gradient-to-b { opacity: 0.85; }
+
+/* Sobreposição de card no hover */
+[data-theme="light"] .bg-dark-900\/40 { background-color: rgba(0,0,0,0.25) !important; }
+[data-theme="light"] .bg-dark-900\/70 { background-color: rgba(180,165,145,0.7) !important; }
+[data-theme="light"] .bg-dark-900\/75 { background-color: rgba(180,165,145,0.75) !important; }
+[data-theme="light"] .bg-dark-900\/60 { background-color: rgba(180,165,145,0.6) !important; }
+[data-theme="light"] .bg-dark-900\/98 { background-color: rgba(250,248,245,0.98) !important; }
+
+/* Sidebar e drawer do carrinho */
+[data-theme="light"] aside.bg-dark-800 { background-color: #F0EAD6 !important; }
+
+/* Divide lines */
+[data-theme="light"] .divide-dark-700 > * + * { border-color: #DDD3B4 !important; }
+
+/* Section titles */
+[data-theme="light"] .section-title { color: #1A1515 !important; }
+
+/* ════════════════════════════════════════════
+   COMPONENTES REUTILIZÁVEIS
+════════════════════════════════════════════ */
 @layer components {
   .btn-gold {
     @apply bg-gold-500 hover:bg-gold-400 text-dark-900 font-semibold px-8 py-3 transition-all duration-300 tracking-widest text-sm uppercase;
@@ -58,7 +145,8 @@ body {
   }
 
   .section-title {
-    @apply font-serif text-4xl md:text-5xl text-cream font-light tracking-wide;
+    @apply font-serif text-4xl md:text-5xl font-light tracking-wide;
+    color: var(--c-text);
   }
 
   .gold-line {

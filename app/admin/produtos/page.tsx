@@ -3,24 +3,31 @@ import Image from 'next/image'
 import { getDBProducts } from '@/lib/db'
 import { products as staticProducts } from '@/lib/products'
 import { formatPrice } from '@/lib/formatters'
-import { Plus, Pencil, Trash2, Package } from 'lucide-react'
+import { Plus, Pencil, Package } from 'lucide-react'
 import DeleteProductButton from './DeleteProductButton'
 
 export default async function AdminProdutos() {
   const dbProducts = await getDBProducts()
 
-  // Combina produtos estáticos (seed) + produtos criados pelo admin
+  // DB products first, then static (DB sobrescreve se tiver mesmo ID)
+  const dbIds = new Set(dbProducts.map(p => p.id))
+  const staticFiltered = staticProducts.filter(p => !dbIds.has(p.id))
+
   const allProducts = [
     ...dbProducts,
-    ...staticProducts.map(p => ({ ...p, createdAt: '2024-01-01', updatedAt: '2024-01-01', details: p.details })),
+    ...staticFiltered.map(p => ({
+      ...p,
+      createdAt: '—',
+      updatedAt: '—',
+    })),
   ]
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-serif text-3xl text-cream font-light">Produtos</h1>
-          <p className="text-dark-400 text-sm mt-1">{allProducts.length} produtos cadastrados</p>
+          <h1 className="font-serif text-3xl text-[var(--c-text)] font-light">Produtos</h1>
+          <p className="text-[var(--c-muted3)] text-sm mt-1">{allProducts.length} produtos cadastrados</p>
         </div>
         <Link href="/admin/produtos/novo" className="btn-gold flex items-center gap-2">
           <Plus size={16} />
@@ -45,9 +52,9 @@ export default async function AdminProdutos() {
                   <th className="text-left px-4 py-3 text-dark-500 text-xs uppercase tracking-wider">Produto</th>
                   <th className="text-left px-4 py-3 text-dark-500 text-xs uppercase tracking-wider">Categoria</th>
                   <th className="text-left px-4 py-3 text-dark-500 text-xs uppercase tracking-wider">Preço</th>
-                  <th className="text-left px-4 py-3 text-dark-500 text-xs uppercase tracking-wider">Status</th>
+                  <th className="text-left px-4 py-3 text-dark-500 text-xs uppercase tracking-wider">Estoque</th>
                   <th className="text-left px-4 py-3 text-dark-500 text-xs uppercase tracking-wider">Tipo</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-4 py-3 text-dark-500 text-xs uppercase tracking-wider text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-700">
@@ -89,26 +96,29 @@ export default async function AdminProdutos() {
                       )}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 justify-end">
+                        {/* Editar — disponível para TODOS os produtos */}
+                        <Link
+                          href={`/admin/produtos/${product.id}/editar`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-dark-600 hover:border-gold-500 text-dark-300 hover:text-gold-400 transition-colors"
+                          title="Editar produto"
+                        >
+                          <Pencil size={12} />
+                          Editar
+                        </Link>
+
+                        {/* Excluir — apenas para produtos personalizados */}
                         {product.id.startsWith('db_') && (
-                          <>
-                            <Link
-                              href={`/admin/produtos/${product.id}/editar`}
-                              className="p-2 text-dark-400 hover:text-gold-400 transition-colors"
-                              title="Editar"
-                            >
-                              <Pencil size={14} />
-                            </Link>
-                            <DeleteProductButton id={product.id} />
-                          </>
+                          <DeleteProductButton id={product.id} />
                         )}
+
                         <Link
                           href={`/produtos/${product.id}`}
                           target="_blank"
-                          className="p-2 text-dark-400 hover:text-cream transition-colors text-xs"
+                          className="px-3 py-1.5 text-xs border border-dark-600 hover:border-dark-400 text-dark-500 hover:text-dark-300 transition-colors"
                           title="Ver na loja"
                         >
-                          Ver →
+                          Ver
                         </Link>
                       </div>
                     </td>
