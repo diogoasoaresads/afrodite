@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
-
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN || '',
-})
+import { getSettings } from '@/lib/settings'
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,28 +11,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Carrinho vazio' }, { status: 400 })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    // Lê credenciais e configurações do settings.json (admin) com fallback para env
+    const settings = await getSettings()
+    const accessToken = settings.mercadopago.accessToken || process.env.MP_ACCESS_TOKEN || ''
+    const baseUrl     = settings.loja.siteUrl || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const installments = settings.mercadopago.installments || 12
 
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: 'Mercado Pago não configurado. Acesse Admin → Configurações e insira seu Access Token.' },
+        { status: 500 }
+      )
+    }
+
+    const client = new MercadoPagoConfig({ accessToken })
     const preference = new Preference(client)
 
     const result = await preference.create({
       body: {
         items: items.map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          quantity: item.quantity,
+          id:         item.id,
+          title:      item.title,
+          quantity:   item.quantity,
           unit_price: item.unit_price,
           currency_id: 'BRL',
           category_id: 'fashion',
         })),
         payer: {
-          name: payer.name,
+          name:  payer.name,
           email: payer.email,
           identification: payer.identification,
         },
         payment_methods: {
           excluded_payment_types: [],
-          installments: 12,
+          installments,
         },
         back_urls: {
           success: `${baseUrl}/pedido/sucesso`,
@@ -44,22 +53,22 @@ export async function POST(req: NextRequest) {
         },
         auto_return: 'approved',
         notification_url: `${baseUrl}/api/webhook`,
-        statement_descriptor: 'AFRODITE JOIAS',
-        metadata: {
-          store: 'afrodite-joias',
-        },
+        statement_descriptor: settings.loja.nome || 'AFRODITE JOIAS',
       },
     })
 
-    // Salva o pedido (em produção, salvar no banco de dados)
-    await saveOrder({ preference_id: result.id, items, payer, total: items.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0), status: 'pending', created_at: new Date().toISOString() })
-
-    return NextResponse.json({
-      id: result.id,
-      init_point: result.init_point,
+    await saveOrder({
+      preference_id: result.id,
+      items,
+      payer,
+      total: items.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0),
+      status: 'pending',
+      created_at: new Date().toISOString(),
     })
+
+    return NextResponse.json({ id: result.id, init_point: result.init_point })
   } catch (err: any) {
-    console.error('Mercado Pago error:', err)
+    console.error('Checkout error:', err)
     return NextResponse.json(
       { error: err?.message || 'Erro interno ao processar pagamento' },
       { status: 500 }
@@ -69,18 +78,15 @@ export async function POST(req: NextRequest) {
 
 async function saveOrder(order: any) {
   try {
-    const fs = await import('fs/promises')
+    const fs   = await import('fs/promises')
     const path = await import('path')
     const filePath = path.join(process.cwd(), 'data', 'orders.json')
-
     let orders: any[] = []
     try {
-      const raw = await fs.readFile(filePath, 'utf-8')
-      orders = JSON.parse(raw)
+      orders = JSON.parse(await fs.readFile(filePath, 'utf-8'))
     } catch {
       await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true })
     }
-
     orders.unshift({ ...order, id: Date.now().toString() })
     await fs.writeFile(filePath, JSON.stringify(orders, null, 2))
   } catch (err) {

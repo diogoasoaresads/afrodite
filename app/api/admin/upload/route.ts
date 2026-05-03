@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
-import { ADMIN_COOKIE, isValidSession } from '@/lib/admin-auth'
-
-function checkAuth(req: NextRequest) {
-  const session = req.cookies.get(ADMIN_COOKIE)?.value
-  return isValidSession(session)
-}
+import { ADMIN_COOKIE, isValidSessionAsync } from '@/lib/admin-auth'
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (!(await isValidSessionAsync(req.cookies.get(ADMIN_COOKIE)?.value))) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
 
   try {
     const formData = await req.formData()

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateDBProduct, deleteDBProduct, saveDBProduct, getDBProducts } from '@/lib/db'
 import { getProductById } from '@/lib/products'
-import { ADMIN_COOKIE, isValidSession } from '@/lib/admin-auth'
+import { ADMIN_COOKIE, isValidSessionAsync } from '@/lib/admin-auth'
 
-function checkAuth(req: NextRequest) {
-  return isValidSession(req.cookies.get(ADMIN_COOKIE)?.value)
+async function checkAuth(req: NextRequest) {
+  return isValidSessionAsync(req.cookies.get(ADMIN_COOKIE)?.value)
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
 
@@ -22,7 +22,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const saved = await saveDBProduct({
       ...staticProduct,
       ...body,
-      // Mantém o ID original para substituir o estático no frontend
     } as any)
     // Salva com o ID original para sobrescrever o estático
     const withOriginalId = await (async () => {
@@ -44,7 +43,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   const ok = await deleteDBProduct(params.id)
   if (!ok) return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 })
   return NextResponse.json({ ok: true })

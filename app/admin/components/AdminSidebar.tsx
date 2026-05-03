@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, LogOut, ExternalLink } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, ExternalLink } from 'lucide-react'
 
 const links = [
-  { href: '/admin',          icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
-  { href: '/admin/produtos', icon: <Package size={18} />,         label: 'Produtos' },
-  { href: '/admin/vendas',   icon: <ShoppingCart size={18} />,    label: 'Vendas' },
-  { href: '/admin/clientes', icon: <Users size={18} />,           label: 'Clientes' },
+  { href: '/admin',                icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+  { href: '/admin/produtos',       icon: <Package size={18} />,         label: 'Produtos' },
+  { href: '/admin/vendas',         icon: <ShoppingCart size={18} />,    label: 'Vendas' },
+  { href: '/admin/clientes',       icon: <Users size={18} />,           label: 'Clientes' },
+  { href: '/admin/configuracoes',  icon: <Settings size={18} />,        label: 'Configurações' },
 ]
 
 export default function AdminSidebar() {

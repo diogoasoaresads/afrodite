@@ -1,9 +1,34 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react'
 
+interface PublicCfg {
+  loja: { nome: string; email: string; telefone: string; whatsapp: string; cidade: string; cnpj: string; siteUrl: string }
+  social: { instagram: string; facebook: string }
+}
+
 export default function Footer() {
+  const [cfg, setCfg] = useState<PublicCfg>({
+    loja:   { nome: 'Afrodite Joias', email: 'contato@afroditejoias.com.br', telefone: '(11) 99999-9999', whatsapp: '', cidade: 'São Paulo, SP', cnpj: '00.000.000/0001-00', siteUrl: '' },
+    social: { instagram: '', facebook: '' },
+  })
+
+  useEffect(() => {
+    fetch('/api/configuracoes/publicas')
+      .then(r => r.json())
+      .then(d => setCfg(prev => ({ ...prev, ...d })))
+      .catch(() => {})
+  }, [])
+
+  const instagramUrl = cfg.social.instagram
+    ? `https://instagram.com/${cfg.social.instagram.replace('@', '')}`
+    : '#'
+  const facebookUrl = cfg.social.facebook
+    ? `https://facebook.com/${cfg.social.facebook.replace('@', '')}`
+    : '#'
+
   return (
     <footer className="bg-dark-800 border-t border-gold-500/20">
       {/* Newsletter */}
@@ -34,17 +59,21 @@ export default function Footer() {
         {/* Marca */}
         <div className="col-span-2 md:col-span-1">
           <Link href="/" className="flex flex-col">
-            <span className="font-serif text-2xl text-cream tracking-[0.2em] font-light">AFRODITE</span>
+            <span className="font-serif text-2xl text-cream tracking-[0.2em] font-light">
+              {cfg.loja.nome?.toUpperCase() || 'AFRODITE'}
+            </span>
             <span className="text-gold-400 text-[9px] tracking-[0.4em] uppercase">joias</span>
           </Link>
           <p className="text-dark-400 text-sm mt-4 leading-relaxed">
             Joias exclusivas criadas para mulheres que celebram sua própria divindade.
           </p>
           <div className="flex gap-4 mt-6">
-            <a href="#" className="text-dark-400 hover:text-gold-400 transition-colors" aria-label="Instagram">
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer"
+              className="text-dark-400 hover:text-gold-400 transition-colors" aria-label="Instagram">
               <Instagram size={20} />
             </a>
-            <a href="#" className="text-dark-400 hover:text-gold-400 transition-colors" aria-label="Facebook">
+            <a href={facebookUrl} target="_blank" rel="noopener noreferrer"
+              className="text-dark-400 hover:text-gold-400 transition-colors" aria-label="Facebook">
               <Facebook size={20} />
             </a>
           </div>
@@ -96,15 +125,15 @@ export default function Footer() {
           <ul className="space-y-4">
             <li className="flex items-start gap-3 text-dark-400 text-sm">
               <Mail size={16} className="text-gold-500 mt-0.5 flex-shrink-0" />
-              <span>contato@afroditejoias.com.br</span>
+              <span>{cfg.loja.email || 'contato@afroditejoias.com.br'}</span>
             </li>
             <li className="flex items-start gap-3 text-dark-400 text-sm">
               <Phone size={16} className="text-gold-500 mt-0.5 flex-shrink-0" />
-              <span>(11) 99999-9999</span>
+              <span>{cfg.loja.telefone || '(11) 99999-9999'}</span>
             </li>
             <li className="flex items-start gap-3 text-dark-400 text-sm">
               <MapPin size={16} className="text-gold-500 mt-0.5 flex-shrink-0" />
-              <span>São Paulo, SP — Brasil</span>
+              <span>{cfg.loja.cidade || 'São Paulo, SP'} — Brasil</span>
             </li>
           </ul>
         </div>
@@ -113,11 +142,13 @@ export default function Footer() {
       {/* Bottom */}
       <div className="border-t border-gold-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-3 text-dark-500 text-xs">
-          <p>© 2024 Afrodite Joias. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} {cfg.loja.nome || 'Afrodite Joias'}. Todos os direitos reservados.</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-gold-400 transition-colors">Privacidade</a>
             <a href="#" className="hover:text-gold-400 transition-colors">Termos de Uso</a>
-            <a href="#" className="hover:text-gold-400 transition-colors">CNPJ: 00.000.000/0001-00</a>
+            {cfg.loja.cnpj && (
+              <span>CNPJ: {cfg.loja.cnpj}</span>
+            )}
           </div>
         </div>
       </div>

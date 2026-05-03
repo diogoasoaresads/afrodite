@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { saveDBProduct, getDBProducts } from '@/lib/db'
 import { products as staticProducts } from '@/lib/products'
-import { ADMIN_COOKIE, isValidSession } from '@/lib/admin-auth'
+import { ADMIN_COOKIE, isValidSessionAsync } from '@/lib/admin-auth'
 
-function checkAuth(req: NextRequest) {
-  return isValidSession(req.cookies.get(ADMIN_COOKIE)?.value)
+async function checkAuth(req: NextRequest) {
+  return isValidSessionAsync(req.cookies.get(ADMIN_COOKIE)?.value)
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const dbProducts = await getDBProducts()
   const dbIds = new Set(dbProducts.map(p => p.id))
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  if (!(await checkAuth(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const body = await req.json()
   const { name, price, originalPrice, category, description, details, material, images, inStock, featured, isNew, isSale } = body

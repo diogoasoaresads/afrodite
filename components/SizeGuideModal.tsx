@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { X, Ruler } from 'lucide-react'
 
 interface Props {
@@ -24,6 +24,18 @@ const ringSizes = [
 ]
 
 export default function SizeGuideModal({ onClose }: Props) {
+  const [whatsapp, setWhatsapp] = useState('5511999999999')
+
+  useEffect(() => {
+    fetch('/api/configuracoes/publicas')
+      .then(r => r.json())
+      .then(d => {
+        const raw = (d?.loja?.whatsapp || '').replace(/\D/g, '')
+        if (raw.length >= 10) setWhatsapp(raw.startsWith('55') ? raw : `55${raw}`)
+      })
+      .catch(() => {})
+  }, [])
+
   // Fecha com Esc
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -151,7 +163,7 @@ export default function SizeGuideModal({ onClose }: Props) {
                 Ainda com dúvida sobre o tamanho?
               </p>
               <a
-                href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20ajuda%20para%20descobrir%20meu%20tamanho%20de%20anel."
+                href={`https://wa.me/${whatsapp}?text=Olá!%20Preciso%20de%20ajuda%20para%20descobrir%20meu%20tamanho%20de%20anel.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 text-sm transition-colors"
