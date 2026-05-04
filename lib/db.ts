@@ -108,8 +108,16 @@ export interface Order {
   payment_method?: string
   items: { id: string; title: string; quantity: number; unit_price: number }[]
   payer: { name: string; email: string; identification: { type: string; number: string } }
+  shipping_address?: {
+    cep: string; rua: string; numero: string; complemento?: string;
+    bairro: string; cidade: string; uf: string
+  }
   total: number
   status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+  shipping_status?: 'pending' | 'shipped' | 'delivered' | 'cancelled'
+  tracking_code?: string
+  shipped_at?: string
+  delivered_at?: string
   created_at: string
   updated_at?: string
 }

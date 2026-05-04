@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { getSettings } from '@/lib/settings'
-import { sendEmail, orderApprovedEmailHtml } from '@/lib/email'
+import { sendEmail, orderApprovedEmailHtml, customerOrderApprovedHtml } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,16 +20,27 @@ export async function POST(req: NextRequest) {
 
       await updateOrder(paymentInfo)
 
-      // Enviar e-mail de notificação ao aprovar pagamento
-      if (paymentInfo.status === 'approved' && settings.smtp?.notifyEmail) {
+      // E-mails ao aprovar pagamento
+      if (paymentInfo.status === 'approved') {
         const orders = await getOrdersForNotification()
         const order = orders.find((o: any) => o.preference_id === (paymentInfo as any).preference_id)
         if (order) {
-          await sendEmail({
-            to: settings.smtp.notifyEmail,
-            subject: `✓ Novo pedido aprovado — ${order.payer?.name || 'Cliente'}`,
-            html: orderApprovedEmailHtml(order, settings.loja.nome),
-          })
+          // Para a dona da loja
+          if (settings.smtp?.notifyEmail && settings.smtp?.host) {
+            sendEmail({
+              to: settings.smtp.notifyEmail,
+              subject: `✓ Novo pedido aprovado — ${order.payer?.name || 'Cliente'}`,
+              html: orderApprovedEmailHtml(order, settings.loja.nome),
+            }).catch(err => console.error('Erro e-mail dona:', err))
+          }
+          // Para o cliente
+          if (order.payer?.email && settings.smtp?.host) {
+            sendEmail({
+              to: order.payer.email,
+              subject: `✓ Pagamento confirmado — Pedido #${order.id}`,
+              html: customerOrderApprovedHtml(order, settings.loja.nome),
+            }).catch(err => console.error('Erro e-mail cliente:', err))
+          }
         }
       }
     }

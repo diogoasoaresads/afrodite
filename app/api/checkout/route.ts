@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { getSettings } from '@/lib/settings'
+import { sendEmail, customerOrderReceivedHtml } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,14 +58,26 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    await saveOrder({
+    const orderTotal = items.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0)
+    const newOrder = {
       preference_id: result.id,
       items,
       payer,
-      total: items.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0),
+      total: orderTotal,
       status: 'pending',
+      shipping_status: 'pending',
       created_at: new Date().toISOString(),
-    })
+    }
+    const savedOrder = await saveOrder(newOrder)
+
+    // E-mail "Pedido recebido" ao cliente (não bloqueia em caso de erro)
+    if (payer.email && settings.smtp?.host) {
+      sendEmail({
+        to: payer.email,
+        subject: `Recebemos seu pedido #${savedOrder.id} — ${settings.loja.nome}`,
+        html: customerOrderReceivedHtml(savedOrder, settings.loja.nome),
+      }).catch(err => console.error('Erro ao enviar e-mail de pedido recebido:', err))
+    }
 
     return NextResponse.json({ id: result.id, init_point: result.init_point })
   } catch (err: any) {
@@ -77,6 +90,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function saveOrder(order: any) {
+  const newOrder = { ...order, id: Date.now().toString() }
   try {
     const fs   = await import('fs/promises')
     const path = await import('path')
@@ -87,9 +101,10 @@ async function saveOrder(order: any) {
     } catch {
       await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true })
     }
-    orders.unshift({ ...order, id: Date.now().toString() })
+    orders.unshift(newOrder)
     await fs.writeFile(filePath, JSON.stringify(orders, null, 2))
   } catch (err) {
     console.error('Erro ao salvar pedido:', err)
   }
+  return newOrder
 }
