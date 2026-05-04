@@ -15,11 +15,7 @@ export default function DeleteProductButton({ id, name, isStatic }: Props) {
   const [loading, setLoading] = useState(false)
 
   const handleDelete = async () => {
-    const msg = isStatic
-      ? `Ocultar "${name}" da loja?\n\nEste é um produto padrão — ele ficará oculto mas não será removido permanentemente.`
-      : `Excluir permanentemente "${name}"?\n\nEssa ação não pode ser desfeita.`
-
-    if (!confirm(msg)) return
+    if (!confirm(`Excluir "${name}"?\n\nO produto sumirá da loja e não aparecerá mais para as clientes.`)) return
 
     setLoading(true)
     await fetch(`/api/admin/produtos/${id}`, { method: 'DELETE' })
@@ -32,7 +28,7 @@ export default function DeleteProductButton({ id, name, isStatic }: Props) {
       onClick={handleDelete}
       disabled={loading}
       className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-dark-600 hover:border-red-500/60 text-dark-400 hover:text-red-400 transition-colors disabled:opacity-40"
-      title={isStatic ? 'Ocultar produto' : 'Excluir produto'}
+      title="Excluir produto"
     >
       <Trash2 size={12} />
       {loading ? '...' : 'Excluir'}
