@@ -52,12 +52,12 @@ function ProdutosContent() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-gold-500/10">
-        {/* Botões de categoria */}
-        <div className="flex flex-wrap gap-2">
+      <div className="mb-8 pb-6 border-b border-gold-500/10 space-y-4">
+        {/* Botões de categoria — scroll horizontal no mobile */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
           <button
             onClick={() => setCategory(null)}
-            className={`px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200 border ${
+            className={`flex-shrink-0 px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200 border ${
               !selectedCategory
                 ? 'border-gold-500 bg-gold-500 text-dark-900 font-semibold'
                 : 'border-dark-600 text-dark-300 hover:border-gold-500 hover:text-gold-400'
@@ -69,7 +69,7 @@ function ProdutosContent() {
             <button
               key={cat.id}
               onClick={() => setCategory(cat.id as Category)}
-              className={`px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200 border ${
+              className={`flex-shrink-0 px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200 border ${
                 selectedCategory === cat.id
                   ? 'border-gold-500 bg-gold-500 text-dark-900 font-semibold'
                   : 'border-dark-600 text-dark-300 hover:border-gold-500 hover:text-gold-400'
@@ -81,12 +81,12 @@ function ProdutosContent() {
         </div>
 
         {/* Ordenar */}
-        <div className="flex items-center gap-3">
-          <span className="text-dark-400 text-xs uppercase tracking-widest hidden sm:block">Ordenar:</span>
+        <div className="flex items-center justify-between sm:justify-end gap-3">
+          <span className="text-dark-400 text-xs uppercase tracking-widest">Ordenar:</span>
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value)}
-            className="bg-dark-800 border border-dark-600 text-cream text-sm px-4 py-2 focus:border-gold-500 outline-none cursor-pointer"
+            className="bg-dark-800 border border-dark-600 text-cream text-sm px-3 py-2 focus:border-gold-500 outline-none cursor-pointer"
           >
             <option value="featured">Em Destaque</option>
             <option value="new">Mais Novos</option>

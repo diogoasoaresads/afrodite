@@ -54,21 +54,21 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 text-center px-4 animate-fade-in">
-          <p className="text-gold-400 text-xs tracking-[0.6em] uppercase mb-6 font-light">
+          <p className="text-gold-400 text-xs tracking-[0.6em] uppercase mb-4 font-light">
             Coleção 2024
           </p>
-          <h1 className="font-serif text-6xl md:text-8xl lg:text-9xl text-cream font-light tracking-[0.08em] leading-none">
+          <h1 className="font-serif text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-cream font-light tracking-[0.08em] leading-none">
             AFRODITE
           </h1>
-          <div className="flex items-center justify-center gap-4 my-6">
-            <div className="h-px bg-gold-500/60 w-16" />
-            <span className="text-gold-400 text-[10px] tracking-[0.5em] uppercase">Joias Exclusivas</span>
-            <div className="h-px bg-gold-500/60 w-16" />
+          <div className="flex items-center justify-center gap-3 my-5">
+            <div className="h-px bg-gold-500/60 w-10 sm:w-16" />
+            <span className="text-gold-400 text-[9px] sm:text-[10px] tracking-[0.4em] sm:tracking-[0.5em] uppercase">Joias Exclusivas</span>
+            <div className="h-px bg-gold-500/60 w-10 sm:w-16" />
           </div>
-          <p className="text-dark-200 text-lg md:text-xl font-light max-w-lg mx-auto leading-relaxed">
+          <p className="text-dark-200 text-base sm:text-lg md:text-xl font-light max-w-sm sm:max-w-lg mx-auto leading-relaxed">
             Beleza que transcende o tempo. Joias criadas para mulheres que celebram a própria divindade.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mt-8 sm:mt-10">
             <Link href="/produtos" className="btn-gold">
               Explorar Coleção
             </Link>
@@ -142,7 +142,7 @@ export default function HomePage() {
       </section>
 
       {/* BANNER CENTRAL */}
-      <section className="relative py-32 overflow-hidden">
+      <section className="relative py-20 sm:py-32 overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=1600&q=85"
@@ -155,51 +155,56 @@ export default function HomePage() {
         </div>
         <div className="relative z-10 text-center px-4 animate-slide-up">
           <p className="text-gold-400 text-xs tracking-[0.6em] uppercase mb-4">Exclusividade</p>
-          <h2 className="font-serif text-4xl md:text-6xl text-cream font-light leading-tight max-w-3xl mx-auto">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-6xl text-cream font-light leading-tight max-w-3xl mx-auto">
             Cada Joia Conta a Sua História
           </h2>
-          <p className="text-dark-200 text-base md:text-lg font-light mt-6 max-w-xl mx-auto leading-relaxed">
+          <p className="text-dark-200 text-sm sm:text-base md:text-lg font-light mt-4 sm:mt-6 max-w-xs sm:max-w-xl mx-auto leading-relaxed">
             Criadas com materiais nobres e atenção artesanal em cada detalhe. Porque você merece o melhor.
           </p>
-          <Link href="/produtos" className="btn-gold inline-flex mt-10">
+          <Link href="/produtos" className="btn-gold inline-flex mt-8 sm:mt-10">
             Descobrir Agora
           </Link>
         </div>
       </section>
 
       {/* BENEFÍCIOS */}
-      <section className="py-20 px-4 sm:px-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           {benefits.map(benefit => (
             <div key={benefit.title} className="text-center group">
-              <div className="flex justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
                 {benefit.icon}
               </div>
-              <h3 className="text-cream text-sm font-semibold tracking-wide mb-2">{benefit.title}</h3>
-              <p className="text-dark-400 text-xs leading-relaxed">{benefit.desc}</p>
+              <h3 className="text-cream text-xs sm:text-sm font-semibold tracking-wide mb-1 sm:mb-2 leading-snug">{benefit.title}</h3>
+              <p className="text-dark-400 text-[10px] sm:text-xs leading-relaxed hidden sm:block">{benefit.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* DEPOIMENTOS */}
-      <section className="py-20 bg-dark-800/50 px-4 sm:px-6">
+      <section className="py-14 sm:py-20 bg-dark-800/50 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="section-title mb-2">O Que Dizem Nossas Clientes</h2>
           <span className="gold-line" />
-          <div className="grid md:grid-cols-3 gap-8 mt-14">
+
+          {/* Scroll horizontal no mobile, grid no desktop */}
+          <div className="flex md:grid md:grid-cols-3 gap-4 sm:gap-8 mt-10 sm:mt-14
+                          overflow-x-auto pb-4 md:overflow-visible
+                          -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 scrollbar-hide">
             {[
               { name: 'Ana Carolina', stars: 5, text: 'Recebi meu colar e fiquei sem palavras. A qualidade é impecável e o acabamento é de joalheria fina. Vou comprar muito mais!' },
               { name: 'Beatriz Oliveira', stars: 5, text: 'O anel de noivado que meu namorado comprou aqui foi perfeito. Entrega rápida e bem embalado. Recomendo demais!' },
               { name: 'Fernanda Lima', stars: 5, text: 'Joias lindíssimas e preços justos. O atendimento foi excelente e chegou antes do prazo. Marca incrível!' },
             ].map(review => (
-              <div key={review.name} className="bg-dark-800 p-8 border border-gold-500/10">
-                <div className="flex justify-center gap-1 mb-4">
+              <div key={review.name} className="bg-dark-800 p-6 sm:p-8 border border-gold-500/10
+                                               flex-shrink-0 w-[80vw] sm:w-[70vw] md:w-auto text-left md:text-center">
+                <div className="flex gap-1 mb-3 justify-start md:justify-center">
                   {Array.from({ length: review.stars }).map((_, i) => (
-                    <Star key={i} size={14} className="text-gold-400 fill-gold-400" />
+                    <Star key={i} size={13} className="text-gold-400 fill-gold-400" />
                   ))}
                 </div>
-                <p className="text-dark-200 text-sm leading-relaxed italic mb-6">"{review.text}"</p>
+                <p className="text-dark-200 text-sm leading-relaxed italic mb-4">"{review.text}"</p>
                 <p className="text-gold-400 text-xs tracking-[0.3em] uppercase font-semibold">{review.name}</p>
               </div>
             ))}
