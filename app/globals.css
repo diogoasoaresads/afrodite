@@ -26,17 +26,17 @@
 }
 
 [data-theme="light"] {
-  --c-bg:     #FAF8F5;
-  --c-surf:   #F0EAD6;
-  --c-surf2:  #E5D9BE;
-  --c-border: #CFC3A0;
-  --c-text:   #1A1515;
-  --c-nav:    #3a3030;
-  --c-muted1: #5a5050;
-  --c-muted2: #7a7070;
-  --c-muted3: #9a9090;
-  --c-muted4: #bab0a8;
-  --c-muted5: #d4ccc0;
+  --c-bg:     #F7F4F0;
+  --c-surf:   #EDE7D9;
+  --c-surf2:  #E2D9C5;
+  --c-border: #BEB49A;
+  --c-text:   #100D0D;
+  --c-nav:    #1e1a1a;
+  --c-muted1: #2d2828;
+  --c-muted2: #3d3535;
+  --c-muted3: #5a5252;
+  --c-muted4: #726868;
+  --c-muted5: #8f8585;
 }
 
 /* ════════════════════════════════════════════
@@ -73,64 +73,70 @@ body {
    LIGHT THEME — Override Tailwind utilities
 ════════════════════════════════════════════ */
 
-/* Backgrounds */
-[data-theme="light"] .bg-dark-900  { background-color: #FAF8F5 !important; }
-[data-theme="light"] .bg-dark-800  { background-color: #F0EAD6 !important; }
-[data-theme="light"] .bg-dark-700  { background-color: #E5D9BE !important; }
-[data-theme="light"] .bg-dark-600  { background-color: #CFC3A0 !important; }
+/* ── Backgrounds ─────────────────────────── */
+[data-theme="light"] .bg-dark-900  { background-color: #F7F4F0 !important; }
+[data-theme="light"] .bg-dark-800  { background-color: #EDE7D9 !important; }
+[data-theme="light"] .bg-dark-700  { background-color: #E2D9C5 !important; }
+[data-theme="light"] .bg-dark-600  { background-color: #D4C9AE !important; }
 
-/* Semi-transparent backgrounds */
-[data-theme="light"] .bg-dark-800\/50 { background-color: rgba(240,234,214,0.5) !important; }
-[data-theme="light"] .bg-dark-700\/30 { background-color: rgba(229,217,190,0.3) !important; }
+/* Semi-transparent */
+[data-theme="light"] .bg-dark-800\/50 { background-color: rgba(237,231,217,0.6) !important; }
+[data-theme="light"] .bg-dark-700\/50 { background-color: rgba(226,217,197,0.6) !important; }
+[data-theme="light"] .bg-dark-700\/30 { background-color: rgba(226,217,197,0.35) !important; }
+[data-theme="light"] .bg-dark-700\/20 { background-color: rgba(226,217,197,0.25) !important; }
 
-/* Text colors */
-[data-theme="light"] .text-cream    { color: #1A1515 !important; }
-[data-theme="light"] .text-dark-200 { color: #3a3030 !important; }
-[data-theme="light"] .text-dark-300 { color: #5a5050 !important; }
-[data-theme="light"] .text-dark-400 { color: #7a7070 !important; }
-[data-theme="light"] .text-dark-500 { color: #9a9090 !important; }
-[data-theme="light"] .text-dark-600 { color: #bab0a8 !important; }
+/* ── Text colors — MUITO mais escuros para contraste ── */
+[data-theme="light"] .text-cream    { color: #100D0D !important; }
+[data-theme="light"] .text-dark-200 { color: #1e1a1a !important; }
+[data-theme="light"] .text-dark-300 { color: #2d2828 !important; }
+[data-theme="light"] .text-dark-400 { color: #3d3535 !important; }
+[data-theme="light"] .text-dark-500 { color: #5a5252 !important; }
+[data-theme="light"] .text-dark-600 { color: #726868 !important; }
 
-/* Borders */
-[data-theme="light"] .border-dark-600 { border-color: #CFC3A0 !important; }
-[data-theme="light"] .border-dark-700 { border-color: #DDD3B4 !important; }
-[data-theme="light"] .border-gold-500\/10 { border-color: rgba(201,145,42,0.2) !important; }
-[data-theme="light"] .border-gold-500\/20 { border-color: rgba(201,145,42,0.3) !important; }
+/* ── Borders ─────────────────────────────── */
+[data-theme="light"] .border-dark-600 { border-color: #BEB49A !important; }
+[data-theme="light"] .border-dark-700 { border-color: #CFC7AE !important; }
+[data-theme="light"] .border-gold-500\/10 { border-color: rgba(180,130,30,0.25) !important; }
+[data-theme="light"] .border-gold-500\/20 { border-color: rgba(180,130,30,0.35) !important; }
+[data-theme="light"] .border-gold-500\/30 { border-color: rgba(180,130,30,0.45) !important; }
 
-/* Inputs, selects, textareas */
+/* ── Inputs ──────────────────────────────── */
 [data-theme="light"] input,
 [data-theme="light"] select,
 [data-theme="light"] textarea {
   background-color: #FFFFFF !important;
-  color: #1A1515 !important;
-  border-color: #CFC3A0 !important;
+  color: #100D0D !important;
+  border-color: #BEB49A !important;
 }
+[data-theme="light"] option       { background-color: #FFFFFF; color: #100D0D; }
+[data-theme="light"] ::placeholder { color: #8f8585 !important; }
 
-[data-theme="light"] option {
-  background-color: #FFFFFF;
-  color: #1A1515;
-}
+/* ── Overlays de card/hero ───────────────── */
+/* Mantém escuro para que o texto cream (→ #100D0D) tenha contraste sobre a imagem */
+[data-theme="light"] .bg-dark-900\/40 { background-color: rgba(0,0,0,0.30) !important; }
+[data-theme="light"] .bg-dark-900\/60 { background-color: rgba(0,0,0,0.45) !important; }
+[data-theme="light"] .bg-dark-900\/70 { background-color: rgba(0,0,0,0.55) !important; }
+[data-theme="light"] .bg-dark-900\/75 { background-color: rgba(0,0,0,0.55) !important; }
+[data-theme="light"] .bg-dark-900\/80 { background-color: rgba(0,0,0,0.60) !important; }
+/* Overlays sólidos usados em menus/painéis */
+[data-theme="light"] .bg-dark-900\/98 { background-color: rgba(247,244,240,0.98) !important; }
 
-[data-theme="light"] ::placeholder { color: #9a9090 !important; }
+/* ── Sidebar e drawer ────────────────────── */
+[data-theme="light"] aside.bg-dark-800 { background-color: #EDE7D9 !important; }
 
-/* Overlay de imagem do hero — um pouco mais suave no light */
-[data-theme="light"] .bg-gradient-to-b { opacity: 0.85; }
+/* ── Tabelas alternadas ──────────────────── */
+[data-theme="light"] .divide-dark-700 > * + * { border-color: #CFC7AE !important; }
 
-/* Sobreposição de card no hover */
-[data-theme="light"] .bg-dark-900\/40 { background-color: rgba(0,0,0,0.25) !important; }
-[data-theme="light"] .bg-dark-900\/70 { background-color: rgba(180,165,145,0.7) !important; }
-[data-theme="light"] .bg-dark-900\/75 { background-color: rgba(180,165,145,0.75) !important; }
-[data-theme="light"] .bg-dark-900\/60 { background-color: rgba(180,165,145,0.6) !important; }
-[data-theme="light"] .bg-dark-900\/98 { background-color: rgba(250,248,245,0.98) !important; }
+/* ── Textos e fundo gold-500/5 ───────────── */
+[data-theme="light"] .bg-gold-500\/5  { background-color: rgba(180,130,30,0.08) !important; }
+[data-theme="light"] .bg-gold-500\/10 { background-color: rgba(180,130,30,0.12) !important; }
 
-/* Sidebar e drawer do carrinho */
-[data-theme="light"] aside.bg-dark-800 { background-color: #F0EAD6 !important; }
+/* ── Section titles ──────────────────────── */
+[data-theme="light"] .section-title { color: #100D0D !important; }
 
-/* Divide lines */
-[data-theme="light"] .divide-dark-700 > * + * { border-color: #DDD3B4 !important; }
-
-/* Section titles */
-[data-theme="light"] .section-title { color: #1A1515 !important; }
+/* ── Textos verdes (frete grátis, PIX) ───── */
+[data-theme="light"] .text-green-400 { color: #2a7a3a !important; }
+[data-theme="light"] .text-red-300   { color: #c02020 !important; }
 
 /* ════════════════════════════════════════════
    COMPONENTES REUTILIZÁVEIS
