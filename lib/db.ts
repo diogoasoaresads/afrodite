@@ -79,6 +79,25 @@ export async function deleteDBProduct(id: string): Promise<boolean> {
   return true
 }
 
+// ─── Produtos ocultos (estáticos ocultados pelo admin) ─────────────────────
+
+export async function getHiddenProductIds(): Promise<string[]> {
+  return readJSON<string[]>('hidden_products.json', [])
+}
+
+export async function hideStaticProduct(id: string): Promise<void> {
+  const hidden = await getHiddenProductIds()
+  if (!hidden.includes(id)) {
+    hidden.push(id)
+    await writeJSON('hidden_products.json', hidden)
+  }
+}
+
+export async function unhideProduct(id: string): Promise<void> {
+  const hidden = await getHiddenProductIds()
+  await writeJSON('hidden_products.json', hidden.filter(h => h !== id))
+}
+
 // ─── Pedidos ───────────────────────────────────────────────────────────────
 
 export interface Order {

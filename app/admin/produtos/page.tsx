@@ -1,25 +1,21 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { getDBProducts } from '@/lib/db'
+import { getDBProducts, getHiddenProductIds } from '@/lib/db'
 import { products as staticProducts } from '@/lib/products'
 import { formatPrice } from '@/lib/formatters'
 import { Plus, Pencil, Package } from 'lucide-react'
 import DeleteProductButton from './DeleteProductButton'
 
 export default async function AdminProdutos() {
-  const dbProducts = await getDBProducts()
-
-  // DB products first, then static (DB sobrescreve se tiver mesmo ID)
-  const dbIds = new Set(dbProducts.map(p => p.id))
-  const staticFiltered = staticProducts.filter(p => !dbIds.has(p.id))
+  const [dbProducts, hidden] = await Promise.all([getDBProducts(), getHiddenProductIds()])
+  const hiddenSet = new Set(hidden)
+  const dbIds     = new Set(dbProducts.map(p => p.id))
 
   const allProducts = [
-    ...dbProducts,
-    ...staticFiltered.map(p => ({
-      ...p,
-      createdAt: '—',
-      updatedAt: '—',
-    })),
+    ...dbProducts.filter(p => !hiddenSet.has(p.id)),
+    ...staticProducts
+      .filter(p => !dbIds.has(p.id) && !hiddenSet.has(p.id))
+      .map(p => ({ ...p, createdAt: '—', updatedAt: '—' })),
   ]
 
   return (
@@ -97,7 +93,6 @@ export default async function AdminProdutos() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1 justify-end">
-                        {/* Editar — disponível para TODOS os produtos */}
                         <Link
                           href={`/admin/produtos/${product.id}/editar`}
                           className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-dark-600 hover:border-gold-500 text-dark-300 hover:text-gold-400 transition-colors"
@@ -107,10 +102,12 @@ export default async function AdminProdutos() {
                           Editar
                         </Link>
 
-                        {/* Excluir — apenas para produtos personalizados */}
-                        {product.id.startsWith('db_') && (
-                          <DeleteProductButton id={product.id} />
-                        )}
+                        {/* Excluir — disponível para TODOS os produtos */}
+                        <DeleteProductButton
+                          id={product.id}
+                          name={product.name}
+                          isStatic={!product.id.startsWith('db_')}
+                        />
 
                         <Link
                           href={`/produtos/${product.id}`}

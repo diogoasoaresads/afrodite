@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateDBProduct, deleteDBProduct, saveDBProduct, getDBProducts } from '@/lib/db'
+import { updateDBProduct, deleteDBProduct, saveDBProduct, getDBProducts, hideStaticProduct } from '@/lib/db'
 import { getProductById } from '@/lib/products'
 import { ADMIN_COOKIE, isValidSessionAsync } from '@/lib/admin-auth'
 
@@ -44,7 +44,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   if (!(await checkAuth(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  const ok = await deleteDBProduct(params.id)
-  if (!ok) return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 })
-  return NextResponse.json({ ok: true })
+
+  // Tenta excluir do DB primeiro
+  const deletedFromDB = await deleteDBProduct(params.id)
+  if (deletedFromDB) return NextResponse.json({ ok: true })
+
+  // Produto estático: adiciona à lista de ocultos
+  const staticProduct = getProductById(params.id)
+  if (staticProduct) {
+    await hideStaticProduct(params.id)
+    return NextResponse.json({ ok: true })
+  }
+
+  return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 })
 }

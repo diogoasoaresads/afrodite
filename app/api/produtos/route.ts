@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
-import { getDBProducts } from '@/lib/db'
+import { getDBProducts, getHiddenProductIds } from '@/lib/db'
 import { products as staticProducts } from '@/lib/products'
 
 export async function GET() {
-  const dbProducts = await getDBProducts()
-  // DB products têm prioridade e aparecem primeiro
-  const all = [...dbProducts, ...staticProducts]
+  const [dbProducts, hidden] = await Promise.all([getDBProducts(), getHiddenProductIds()])
+  const hiddenSet = new Set(hidden)
+  const dbIds     = new Set(dbProducts.map(p => p.id))
+
+  const all = [
+    ...dbProducts.filter(p => !hiddenSet.has(p.id)),
+    ...staticProducts.filter(p => !dbIds.has(p.id) && !hiddenSet.has(p.id)),
+  ]
+
   return NextResponse.json(all)
 }
