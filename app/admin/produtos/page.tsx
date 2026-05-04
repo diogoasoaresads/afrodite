@@ -5,6 +5,7 @@ import { products as staticProducts } from '@/lib/products'
 import { formatPrice } from '@/lib/formatters'
 import { Plus, Pencil, Package } from 'lucide-react'
 import DeleteProductButton from './DeleteProductButton'
+import StockToggle from './StockToggle'
 
 export default async function AdminProdutos() {
   const [dbProducts, hidden] = await Promise.all([getDBProducts(), getHiddenProductIds()])
@@ -78,11 +79,7 @@ export default async function AdminProdutos() {
                     <td className="px-4 py-4 text-dark-300 text-sm capitalize">{product.category}</td>
                     <td className="px-4 py-4 text-gold-400 text-sm font-semibold">{formatPrice(product.price)}</td>
                     <td className="px-4 py-4">
-                      {product.inStock ? (
-                        <span className="text-green-400 text-xs bg-green-400/10 px-2 py-1">Em estoque</span>
-                      ) : (
-                        <span className="text-red-400 text-xs bg-red-400/10 px-2 py-1">Esgotado</span>
-                      )}
+                      <StockToggle id={product.id} initialValue={product.inStock} />
                     </td>
                     <td className="px-4 py-4">
                       {product.id.startsWith('db_') ? (

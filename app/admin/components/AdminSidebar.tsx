@@ -5,11 +5,11 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, ExternalLink } from 'lucide-react'
 
 const links = [
-  { href: '/admin',                icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
-  { href: '/admin/produtos',       icon: <Package size={18} />,         label: 'Produtos' },
-  { href: '/admin/vendas',         icon: <ShoppingCart size={18} />,    label: 'Vendas' },
-  { href: '/admin/clientes',       icon: <Users size={18} />,           label: 'Clientes' },
-  { href: '/admin/configuracoes',  icon: <Settings size={18} />,        label: 'Configurações' },
+  { href: '/admin',               icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+  { href: '/admin/produtos',      icon: <Package size={18} />,         label: 'Produtos' },
+  { href: '/admin/vendas',        icon: <ShoppingCart size={18} />,    label: 'Vendas' },
+  { href: '/admin/clientes',      icon: <Users size={18} />,           label: 'Clientes' },
+  { href: '/admin/configuracoes', icon: <Settings size={18} />,        label: 'Configurações' },
 ]
 
 export default function AdminSidebar() {
@@ -45,22 +45,26 @@ export default function AdminSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-6 border-t border-gold-500/10 space-y-2">
+      <div className="px-3 pb-6 border-t border-gold-500/10 pt-4 space-y-1">
         <Link
           href="/"
           target="_blank"
-          className="flex items-center gap-3 px-4 py-2.5 text-xs text-dark-400 hover:text-gold-400 transition-colors"
+          className="flex items-center gap-3 px-4 py-2.5 text-xs text-dark-400 hover:text-gold-400 transition-colors rounded-sm hover:bg-dark-700"
         >
           <ExternalLink size={14} />
           Ver Loja
         </Link>
+
+        {/* Logout — bem visível */}
         <form action="/api/admin/logout" method="POST">
           <button
             type="submit"
-            className="flex items-center gap-3 px-4 py-2.5 text-xs text-dark-400 hover:text-red-400 transition-colors w-full"
+            className="flex items-center gap-3 px-4 py-2.5 text-xs font-medium w-full rounded-sm
+                       text-red-400 bg-red-400/5 hover:bg-red-400/15 border border-red-400/20 hover:border-red-400/40
+                       transition-all duration-200"
           >
             <LogOut size={14} />
-            Sair
+            Sair da Conta
           </button>
         </form>
       </div>

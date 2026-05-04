@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, X, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Plus, X, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useToast } from '@/lib/toast-context'
 
 const categoryOptions = [
   { value: 'aneis',     label: 'Anéis' },
@@ -15,8 +16,10 @@ const categoryOptions = [
 
 export default function NovoProduto() {
   const router = useRouter()
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [savedId, setSavedId] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     name: '',
@@ -76,10 +79,14 @@ export default function NovoProduto() {
       })
 
       if (!res.ok) throw new Error('Erro ao salvar produto')
+      const data = await res.json()
+      setSavedId(data.id)
+      showToast('Produto publicado com sucesso!')
       router.push('/admin/produtos')
       router.refresh()
     } catch (err: any) {
       setError(err.message)
+      showToast(err.message, 'error')
     } finally {
       setLoading(false)
     }
@@ -259,10 +266,16 @@ export default function NovoProduto() {
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-3">
           <button type="submit" disabled={loading} className="btn-gold">
             {loading ? 'Salvando...' : 'Publicar Produto'}
           </button>
+          {savedId && (
+            <a href={`/produtos/${savedId}`} target="_blank" rel="noreferrer"
+              className="flex items-center gap-2 border border-dark-600 hover:border-gold-500 text-dark-300 hover:text-gold-400 px-5 py-3 text-sm transition-colors">
+              <ExternalLink size={14} /> Ver na Loja
+            </a>
+          )}
           <Link href="/admin/produtos" className="btn-outline-gold">Cancelar</Link>
         </div>
       </form>

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Plus, X } from 'lucide-react'
+import { ArrowLeft, Plus, X, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useToast } from '@/lib/toast-context'
 
 const categoryOptions = [
   { value: 'aneis',     label: 'Anéis' },
@@ -17,6 +18,7 @@ export default function EditarProduto() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const { showToast } = useToast()
 
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -70,10 +72,12 @@ export default function EditarProduto() {
         body: JSON.stringify({ ...form, images: images.filter(Boolean), details: details.filter(Boolean) }),
       })
       if (!res.ok) throw new Error('Erro ao salvar')
+      showToast('Produto atualizado com sucesso!')
       router.push('/admin/produtos')
       router.refresh()
     } catch (err: any) {
       setError(err.message)
+      showToast(err.message, 'error')
     } finally { setSaving(false) }
   }
 
@@ -182,8 +186,12 @@ export default function EditarProduto() {
         </div>
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-3">
           <button type="submit" disabled={saving} className="btn-gold">{saving ? 'Salvando...' : 'Salvar Alterações'}</button>
+          <a href={`/produtos/${id}`} target="_blank" rel="noreferrer"
+            className="flex items-center gap-2 border border-dark-600 hover:border-gold-500 text-dark-300 hover:text-gold-400 px-5 py-3 text-sm transition-colors">
+            <ExternalLink size={14} /> Ver na Loja
+          </a>
           <Link href="/admin/produtos" className="btn-outline-gold">Cancelar</Link>
         </div>
       </form>

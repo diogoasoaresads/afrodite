@@ -8,21 +8,21 @@ export interface StoreSettings {
     accessToken: string
     publicKey: string
     installments: number
-    pixDiscount: number       // % de desconto no PIX (ex: 5)
+    pixDiscount: number
   }
   loja: {
     nome: string
     cnpj: string
     telefone: string
-    whatsapp: string          // apenas números, ex: 5511999999999
+    whatsapp: string
     email: string
     endereco: string
     cidade: string
-    siteUrl: string           // URL base do site (para callbacks do MP)
+    siteUrl: string
   }
   frete: {
-    gratisPorValor: number    // grátis acima de R$ X (0 = sempre grátis)
-    valorFixo: number         // R$ de frete (0 = grátis)
+    gratisPorValor: number
+    valorFixo: number
   }
   social: {
     instagram: string
@@ -30,6 +30,13 @@ export interface StoreSettings {
   }
   seguranca: {
     adminPassword: string
+  }
+  smtp: {
+    host: string          // ex: smtp.gmail.com
+    port: number          // 587 ou 465
+    user: string          // e-mail remetente
+    pass: string          // senha ou app password
+    notifyEmail: string   // e-mail para receber alertas de pedido
   }
 }
 
@@ -61,6 +68,13 @@ const defaultSettings: StoreSettings = {
   seguranca: {
     adminPassword: process.env.ADMIN_PASSWORD || 'afrodite2024',
   },
+  smtp: {
+    host: process.env.SMTP_HOST || '',
+    port: Number(process.env.SMTP_PORT) || 587,
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    notifyEmail: process.env.SMTP_NOTIFY_EMAIL || '',
+  },
 }
 
 export async function getSettings(): Promise<StoreSettings> {
@@ -74,6 +88,7 @@ export async function getSettings(): Promise<StoreSettings> {
       frete:       { ...defaultSettings.frete,       ...saved.frete },
       social:      { ...defaultSettings.social,      ...saved.social },
       seguranca:   { ...defaultSettings.seguranca,   ...saved.seguranca },
+      smtp:        { ...defaultSettings.smtp,        ...saved.smtp },
     }
   } catch {
     return defaultSettings
@@ -88,6 +103,7 @@ export async function saveSettings(data: Partial<StoreSettings>): Promise<StoreS
     frete:       { ...current.frete,       ...data.frete },
     social:      { ...current.social,      ...data.social },
     seguranca:   { ...current.seguranca,   ...data.seguranca },
+    smtp:        { ...current.smtp,        ...data.smtp },
   }
   await fs.mkdir(path.dirname(SETTINGS_FILE), { recursive: true })
   await fs.writeFile(SETTINGS_FILE, JSON.stringify(updated, null, 2))
