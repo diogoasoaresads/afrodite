@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSettings } from '@/lib/settings'
 import { sendEmail, passwordResetEmailHtml } from '@/lib/email'
+import { recoveryRateLimit } from '@/lib/rate-limit'
 import fs from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
@@ -20,6 +21,13 @@ async function writeTokens(t: ResetToken[]) {
 
 // POST: solicitar recuperação
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || 'unknown'
+  const limit = recoveryRateLimit(ip)
+  if (limit.limited) {
+    // Anti-enumeration: retorna sucesso mesmo se bloqueado
+    return NextResponse.json({ ok: true })
+  }
+
   const { email } = await req.json()
   if (!email) return NextResponse.json({ error: 'E-mail obrigatório' }, { status: 400 })
 

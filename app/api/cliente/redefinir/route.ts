@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import crypto from 'crypto'
+import { hashPassword } from '@/lib/customer-auth'
 
 const RESETS_FILE = path.join(process.cwd(), 'data', 'password_resets.json')
 const CUSTOMERS_FILE = path.join(process.cwd(), 'data', 'customers.json')
@@ -15,10 +15,6 @@ async function readTokens(): Promise<ResetToken[]> {
 async function writeTokens(t: ResetToken[]) {
   await fs.mkdir(path.dirname(RESETS_FILE), { recursive: true })
   await fs.writeFile(RESETS_FILE, JSON.stringify(t, null, 2))
-}
-
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password + 'afrodite_salt').digest('hex')
 }
 
 // POST: redefinir senha com token
@@ -48,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Conta não encontrada.' }, { status: 404 })
   }
 
-  customers[idx].passwordHash = hashPassword(newPassword)
+  customers[idx].passwordHash = await hashPassword(newPassword)
   await fs.writeFile(CUSTOMERS_FILE, JSON.stringify(customers, null, 2))
 
   // Remove token usado (e expirados)

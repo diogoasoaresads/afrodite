@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { parseSessionToken, getCustomerById, CUSTOMER_COOKIE } from '@/lib/customer-auth'
+import { parseSessionToken, getCustomerById, CUSTOMER_COOKIE, verifyPassword, hashPassword } from '@/lib/customer-auth'
 import fs from 'fs/promises'
 import path from 'path'
-import crypto from 'crypto'
 
 const CUSTOMERS_FILE = path.join(process.cwd(), 'data', 'customers.json')
-
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password + 'afrodite_salt').digest('hex')
-}
 
 export async function PUT(req: NextRequest) {
   const cookieStore = await cookies()
@@ -37,13 +32,14 @@ export async function PUT(req: NextRequest) {
     if (!currentPassword) {
       return NextResponse.json({ error: 'Informe a senha atual para alterá-la.' }, { status: 400 })
     }
-    if (customers[idx].passwordHash !== hashPassword(currentPassword)) {
+    const currentValid = await verifyPassword(currentPassword, customers[idx].passwordHash)
+    if (!currentValid) {
       return NextResponse.json({ error: 'Senha atual incorreta.' }, { status: 400 })
     }
     if (newPassword.length < 6) {
       return NextResponse.json({ error: 'A nova senha deve ter pelo menos 6 caracteres.' }, { status: 400 })
     }
-    customers[idx].passwordHash = hashPassword(newPassword)
+    customers[idx].passwordHash = await hashPassword(newPassword)
   }
 
   customers[idx].name = name.trim()
