@@ -5,6 +5,7 @@ export interface EmailPayload {
   to: string
   subject: string
   html: string
+  replyTo?: string
 }
 
 export async function sendEmail(payload: EmailPayload): Promise<{ ok: boolean; error?: string }> {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/lib/theme'
 import ConditionalShell from '@/components/ConditionalShell'
+import CookieBanner from '@/components/CookieBanner'
 
 export const metadata: Metadata = {
   title: 'Afrodite Joias | Beleza que Dura para Sempre',
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ConditionalShell>
             <main>{children}</main>
           </ConditionalShell>
+          <CookieBanner />
         </ThemeProvider>
       </body>
     </html>

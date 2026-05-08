@@ -193,7 +193,7 @@ export default function LoginPage() {
 
         <p className="text-center text-dark-600 text-xs mt-6">
           Ao criar conta, você concorda com nossa{' '}
-          <a href="#" className="text-gold-500/60 hover:text-gold-400">Política de Privacidade</a>
+          <Link href="/politica-privacidade" className="text-gold-500/60 hover:text-gold-400">Política de Privacidade</Link>
         </p>
       </div>
     </div>

@@ -4,6 +4,51 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react'
 
+function NewsletterForm() {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) return
+    setStatus('loading')
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      setStatus(res.ok ? 'done' : 'error')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  if (status === 'done') return (
+    <p className="text-gold-400 text-sm font-semibold">✓ Inscrição confirmada! Obrigada.</p>
+  )
+
+  return (
+    <form className="flex w-full md:w-auto gap-0" onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="Seu e-mail"
+        required
+        className="bg-dark-700 border border-gold-500/30 text-cream placeholder:text-dark-400 px-5 py-3 text-sm flex-1 md:w-72 outline-none focus:border-gold-400 transition-colors"
+      />
+      <button
+        type="submit"
+        disabled={status === 'loading'}
+        className="bg-gold-500 hover:bg-gold-400 text-dark-900 font-semibold px-6 py-3 text-sm tracking-widest uppercase transition-colors whitespace-nowrap disabled:opacity-60"
+      >
+        {status === 'loading' ? '...' : 'Assinar'}
+      </button>
+    </form>
+  )
+}
+
 interface PublicCfg {
   loja: { nome: string; email: string; telefone: string; whatsapp: string; cidade: string; cnpj: string; siteUrl: string }
   social: { instagram: string; facebook: string }
@@ -38,24 +83,12 @@ export default function Footer() {
             <h3 className="font-serif text-2xl text-cream font-light">Receba Nossas Novidades</h3>
             <p className="text-dark-300 text-sm mt-1">Ofertas exclusivas e lançamentos em primeira mão.</p>
           </div>
-          <form className="flex w-full md:w-auto gap-0" onSubmit={e => e.preventDefault()}>
-            <input
-              type="email"
-              placeholder="Seu e-mail"
-              className="bg-dark-700 border border-gold-500/30 text-cream placeholder:text-dark-400 px-5 py-3 text-sm flex-1 md:w-72 outline-none focus:border-gold-400 transition-colors"
-            />
-            <button
-              type="submit"
-              className="bg-gold-500 hover:bg-gold-400 text-dark-900 font-semibold px-6 py-3 text-sm tracking-widest uppercase transition-colors whitespace-nowrap"
-            >
-              Assinar
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </div>
 
       {/* Links */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 grid grid-cols-2 md:grid-cols-5 gap-10">
         {/* Marca */}
         <div className="col-span-2 md:col-span-1">
           <Link href="/" className="flex flex-col">
@@ -104,16 +137,34 @@ export default function Footer() {
           <h4 className="text-cream text-xs tracking-[0.3em] uppercase mb-5">Ajuda</h4>
           <ul className="space-y-3">
             {[
-              'Como Comprar',
-              'Trocas e Devoluções',
-              'Garantia',
-              'Guia de Tamanhos',
-              'Cuidados com Joias',
-            ].map(item => (
-              <li key={item}>
-                <a href="#" className="text-dark-400 hover:text-gold-400 text-sm transition-colors">
-                  {item}
-                </a>
+              { href: '/como-comprar',      label: 'Como Comprar' },
+              { href: '/trocas-devolucoes', label: 'Trocas e Devoluções' },
+              { href: '/garantia',          label: 'Garantia' },
+              { href: '/faq',               label: 'Perguntas Frequentes' },
+              { href: '/cuidados-joias',    label: 'Cuidados com Joias' },
+            ].map(link => (
+              <li key={link.href}>
+                <Link href={link.href} className="text-dark-400 hover:text-gold-400 text-sm transition-colors">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Empresa */}
+        <div className="hidden md:block">
+          <h4 className="text-cream text-xs tracking-[0.3em] uppercase mb-5">Empresa</h4>
+          <ul className="space-y-3">
+            {[
+              { href: '/sobre',   label: 'Sobre Nós' },
+              { href: '/contato', label: 'Contato' },
+              { href: '/faq',     label: 'FAQ' },
+            ].map(link => (
+              <li key={link.href}>
+                <Link href={link.href} className="text-dark-400 hover:text-gold-400 text-sm transition-colors">
+                  {link.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -144,8 +195,8 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-3 text-dark-500 text-xs">
           <p>© {new Date().getFullYear()} {cfg.loja.nome || 'Afrodite Joias'}. Todos os direitos reservados.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-gold-400 transition-colors">Privacidade</a>
-            <a href="#" className="hover:text-gold-400 transition-colors">Termos de Uso</a>
+            <Link href="/politica-privacidade" className="hover:text-gold-400 transition-colors">Privacidade</Link>
+            <Link href="/termos-uso" className="hover:text-gold-400 transition-colors">Termos de Uso</Link>
             {cfg.loja.cnpj && (
               <span>CNPJ: {cfg.loja.cnpj}</span>
             )}
