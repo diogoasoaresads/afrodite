@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/formatters'
-import { ChevronDown, ChevronUp, Truck, Package, CheckCircle, Loader2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Truck, Package, CheckCircle, Loader2, Download } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 
 interface Order {
@@ -118,6 +118,10 @@ export default function VendasClient({ orders: initialOrders }: { orders: Order[
             {filter === 'approved' && ` · ${formatPrice(total)} aprovados`}
           </p>
         </div>
+        <a href="/api/admin/exportar/pedidos" download
+          className="flex items-center gap-2 px-4 py-2 border border-dark-600 hover:border-gold-500 text-dark-400 hover:text-gold-400 text-xs transition-colors whitespace-nowrap">
+          <Download size={14} /> Exportar CSV
+        </a>
       </div>
 
       {/* Filtros */}

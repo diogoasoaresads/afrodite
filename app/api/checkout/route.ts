@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { getSettings } from '@/lib/settings'
 import { sendEmail, customerOrderReceivedHtml } from '@/lib/email'
+import { incrementCouponUse } from '@/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { items, payer, shipping_address } = body
+    const { items, payer, shipping_address, coupon } = body
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Carrinho vazio' }, { status: 400 })
@@ -59,17 +60,26 @@ export async function POST(req: NextRequest) {
     })
 
     const orderTotal = items.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0)
+    const couponDiscount = coupon?.discountAmount ?? 0
+    const finalTotal = Math.max(0, orderTotal - couponDiscount)
+
     const newOrder: any = {
       preference_id: result.id,
       items,
       payer,
-      total: orderTotal,
+      total: finalTotal,
       status: 'pending',
       shipping_status: 'pending',
       created_at: new Date().toISOString(),
     }
     if (shipping_address) newOrder.shipping_address = shipping_address
+    if (coupon) newOrder.coupon = { id: coupon.couponId, code: coupon.code, discount: couponDiscount }
     const savedOrder = await saveOrder(newOrder)
+
+    // Incrementa uso do cupom
+    if (coupon?.couponId) {
+      incrementCouponUse(coupon.couponId).catch(err => console.error('Erro ao incrementar cupom:', err))
+    }
 
     // E-mail "Pedido recebido" ao cliente (não bloqueia em caso de erro)
     if (payer.email && settings.smtp?.host) {

@@ -138,6 +138,64 @@ export async function getOrderStats() {
   }
 }
 
+// ─── Cupons ────────────────────────────────────────────────────────────────
+
+export interface Coupon {
+  id: string
+  code: string
+  type: 'percent' | 'fixed'
+  discount: number           // % or R$
+  minValue: number           // valor mínimo do carrinho
+  maxUses: number            // 0 = ilimitado
+  usedCount: number
+  expiresAt?: string         // ISO date string, undefined = sem expiração
+  active: boolean
+  createdAt: string
+}
+
+export async function getCoupons(): Promise<Coupon[]> {
+  return readJSON<Coupon[]>('coupons.json', [])
+}
+
+export async function getCouponByCode(code: string): Promise<Coupon | null> {
+  const coupons = await getCoupons()
+  return coupons.find(c => c.code.toUpperCase() === code.toUpperCase()) ?? null
+}
+
+export async function saveCoupon(data: Omit<Coupon, 'id' | 'usedCount' | 'createdAt'>): Promise<Coupon> {
+  const coupons = await getCoupons()
+  const coupon: Coupon = { ...data, id: `cp_${Date.now()}`, usedCount: 0, createdAt: new Date().toISOString() }
+  coupons.unshift(coupon)
+  await writeJSON('coupons.json', coupons)
+  return coupon
+}
+
+export async function updateCoupon(id: string, data: Partial<Coupon>): Promise<Coupon | null> {
+  const coupons = await getCoupons()
+  const idx = coupons.findIndex(c => c.id === id)
+  if (idx === -1) return null
+  coupons[idx] = { ...coupons[idx], ...data }
+  await writeJSON('coupons.json', coupons)
+  return coupons[idx]
+}
+
+export async function deleteCoupon(id: string): Promise<boolean> {
+  const coupons = await getCoupons()
+  const filtered = coupons.filter(c => c.id !== id)
+  if (filtered.length === coupons.length) return false
+  await writeJSON('coupons.json', filtered)
+  return true
+}
+
+export async function incrementCouponUse(id: string): Promise<void> {
+  const coupons = await getCoupons()
+  const idx = coupons.findIndex(c => c.id === id)
+  if (idx !== -1) {
+    coupons[idx].usedCount++
+    await writeJSON('coupons.json', coupons)
+  }
+}
+
 // ─── Clientes ──────────────────────────────────────────────────────────────
 
 export interface Customer {

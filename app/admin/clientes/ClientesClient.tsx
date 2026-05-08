@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { formatPrice } from '@/lib/formatters'
-import { Users, ChevronDown, ChevronUp } from 'lucide-react'
+import { Users, ChevronDown, ChevronUp, Download } from 'lucide-react'
 
 interface Customer {
   email: string; name: string; cpf: string
@@ -52,13 +52,19 @@ export default function ClientesClient({ customers, orders }: { customers: Custo
           <h1 className="font-serif text-3xl text-cream font-light">Clientes</h1>
           <p className="text-dark-400 text-sm mt-1">{filtered.length} cliente{filtered.length !== 1 ? 's' : ''}</p>
         </div>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por nome ou e-mail..."
-          className="bg-dark-800 border border-dark-600 focus:border-gold-500 text-cream placeholder:text-dark-500 px-4 py-2.5 text-sm outline-none transition-colors sm:w-72"
-        />
+        <div className="flex items-center gap-3 flex-wrap">
+          <a href="/api/admin/exportar/clientes" download
+            className="flex items-center gap-2 px-4 py-2 border border-dark-600 hover:border-gold-500 text-dark-400 hover:text-gold-400 text-xs transition-colors whitespace-nowrap">
+            <Download size={14} /> Exportar CSV
+          </a>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por nome ou e-mail..."
+            className="bg-dark-800 border border-dark-600 focus:border-gold-500 text-cream placeholder:text-dark-500 px-4 py-2.5 text-sm outline-none transition-colors sm:w-72"
+          />
+        </div>
       </div>
 
       <div className="bg-dark-800 border border-gold-500/10">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ShieldCheck, Lock, Loader2 } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Lock, Loader2, Tag, X } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { formatPrice } from '@/lib/formatters'
 import { fetchCep } from '@/lib/cep'
@@ -30,6 +30,14 @@ export default function CheckoutPage() {
   const [cepLoading, setCepLoading] = useState(false)
   const [cepError, setCepError]     = useState('')
 
+  // Cupom
+  const [couponInput, setCouponInput] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    couponId: string; code: string; discountAmount: number
+  } | null>(null)
+
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const [cfg, setCfg]         = useState<PublicSettings>({
@@ -49,10 +57,30 @@ export default function CheckoutPage() {
   const frete       = freteGratis ? 0 : cfg.frete.valorFixo
   const total       = subtotal + frete
 
+  const couponDiscount = appliedCoupon?.discountAmount ?? 0
+  const totalAfterCoupon = Math.max(0, total - couponDiscount)
+
   // Desconto PIX
   const pixDiscount  = cfg.mercadopago.pixDiscount
-  const totalPix     = total * (1 - pixDiscount / 100)
+  const totalPix     = totalAfterCoupon * (1 - pixDiscount / 100)
   const installments = cfg.mercadopago.installments
+
+  const applyCoupon = async () => {
+    if (!couponInput.trim()) return
+    setCouponError('')
+    setCouponLoading(true)
+    try {
+      const res = await fetch('/api/cupom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponInput.trim(), cartTotal: total }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setCouponError(data.error); return }
+      setAppliedCoupon({ couponId: data.couponId, code: data.code, discountAmount: data.discountAmount })
+      setCouponInput('')
+    } finally { setCouponLoading(false) }
+  }
 
   const formatCPF = (v: string) =>
     v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').slice(0, 14)
@@ -116,6 +144,7 @@ export default function CheckoutPage() {
             identification: { type: 'CPF', number: form.cpf.replace(/\D/g, '') },
           },
           shipping_address: shippingAddress,
+          coupon: appliedCoupon ?? undefined,
         }),
       })
       const data = await res.json()
@@ -300,6 +329,38 @@ export default function CheckoutPage() {
                 ))}
               </ul>
 
+              {/* Campo cupom */}
+              <div className="mb-4">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-green-400/10 border border-green-400/30 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Tag size={13} className="text-green-400" />
+                      <span className="text-green-400 font-mono text-sm font-semibold">{appliedCoupon.code}</span>
+                      <span className="text-green-400 text-xs">−{formatPrice(appliedCoupon.discountAmount)}</span>
+                    </div>
+                    <button onClick={() => setAppliedCoupon(null)} className="text-dark-400 hover:text-red-400 transition-colors">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-0">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
+                      onKeyDown={e => e.key === 'Enter' && applyCoupon()}
+                      placeholder="Código de cupom"
+                      className="flex-1 bg-dark-700 border border-dark-600 focus:border-gold-500 text-cream placeholder:text-dark-600 px-3 py-2 text-xs outline-none"
+                    />
+                    <button onClick={applyCoupon} disabled={couponLoading || !couponInput.trim()}
+                      className="px-3 py-2 bg-dark-700 border border-l-0 border-dark-600 hover:border-gold-500 text-dark-400 hover:text-gold-400 text-xs transition-colors whitespace-nowrap disabled:opacity-50">
+                      {couponLoading ? '...' : 'Aplicar'}
+                    </button>
+                  </div>
+                )}
+                {couponError && <p className="text-red-400 text-xs mt-1">{couponError}</p>}
+              </div>
+
               <div className="space-y-3 border-t border-gold-500/10 pt-4 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-dark-400">Subtotal</span>
@@ -311,6 +372,12 @@ export default function CheckoutPage() {
                     ? <span className="text-green-400">Grátis</span>
                     : <span className="text-cream">{formatPrice(frete)}</span>}
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-400">Cupom ({appliedCoupon?.code})</span>
+                    <span className="text-green-400">−{formatPrice(couponDiscount)}</span>
+                  </div>
+                )}
                 {!freteGratis && cfg.frete.gratisPorValor > 0 && (
                   <p className="text-dark-500 text-xs">
                     Falta {formatPrice(cfg.frete.gratisPorValor - subtotal)} para frete grátis
@@ -318,10 +385,10 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between font-semibold text-lg border-t border-gold-500/10 pt-3">
                   <span className="text-cream">Total</span>
-                  <span className="text-gold-400">{formatPrice(total)}</span>
+                  <span className="text-gold-400">{formatPrice(totalAfterCoupon)}</span>
                 </div>
                 <p className="text-dark-500 text-xs">
-                  {installments}x de {formatPrice(total / installments)} sem juros no cartão
+                  {installments}x de {formatPrice(totalAfterCoupon / installments)} sem juros no cartão
                 </p>
                 {pixDiscount > 0 && (
                   <p className="text-green-400 text-xs font-semibold">
