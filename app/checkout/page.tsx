@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ShieldCheck, Lock } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Lock, Loader2 } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { formatPrice } from '@/lib/formatters'
+import { fetchCep } from '@/lib/cep'
 
 interface PublicSettings {
   mercadopago: { publicKey: string; installments: number; pixDiscount: number }
@@ -13,12 +14,22 @@ interface PublicSettings {
 }
 
 interface CustomerForm { name: string; email: string; cpf: string; phone: string }
+interface AddressForm {
+  cep: string; rua: string; numero: string; complemento: string
+  bairro: string; cidade: string; uf: string
+}
 
 export default function CheckoutPage() {
   const { items, getTotalPrice } = useCartStore()
   const subtotal = getTotalPrice()
 
   const [form, setForm]       = useState<CustomerForm>({ name: '', email: '', cpf: '', phone: '' })
+  const [address, setAddress] = useState<AddressForm>({
+    cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', uf: ''
+  })
+  const [cepLoading, setCepLoading] = useState(false)
+  const [cepError, setCepError]     = useState('')
+
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const [cfg, setCfg]         = useState<PublicSettings>({
@@ -49,6 +60,29 @@ export default function CheckoutPage() {
   const formatPhone = (v: string) =>
     v.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 15)
 
+  const formatCEP = (v: string) =>
+    v.replace(/\D/g, '').replace(/(\d{5})(\d{1,3})$/, '$1-$2').slice(0, 9)
+
+  const handleCepBlur = async () => {
+    const cleaned = address.cep.replace(/\D/g, '')
+    if (cleaned.length !== 8) return
+    setCepLoading(true)
+    setCepError('')
+    const data = await fetchCep(cleaned)
+    if (!data) {
+      setCepError('CEP não encontrado.')
+    } else {
+      setAddress(prev => ({
+        ...prev,
+        rua: data.rua,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        uf: data.uf,
+      }))
+    }
+    setCepLoading(false)
+  }
+
   const isValid = form.name.trim().length > 2
     && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
     && form.cpf.replace(/\D/g, '').length === 11
@@ -59,6 +93,16 @@ export default function CheckoutPage() {
     setLoading(true)
     setError('')
     try {
+      const shippingAddress = address.cep ? {
+        cep: address.cep,
+        rua: address.rua,
+        numero: address.numero,
+        complemento: address.complemento,
+        bairro: address.bairro,
+        cidade: address.cidade,
+        uf: address.uf,
+      } : undefined
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,6 +115,7 @@ export default function CheckoutPage() {
             name: form.name, email: form.email,
             identification: { type: 'CPF', number: form.cpf.replace(/\D/g, '') },
           },
+          shipping_address: shippingAddress,
         }),
       })
       const data = await res.json()
@@ -106,6 +151,7 @@ export default function CheckoutPage() {
         <div className="grid md:grid-cols-5 gap-10">
           {/* Formulário */}
           <div className="md:col-span-3 space-y-8">
+            {/* Dados pessoais */}
             <div>
               <h2 className="text-cream text-sm tracking-[0.3em] uppercase mb-6 pb-3 border-b border-gold-500/10">
                 Dados do Comprador
@@ -135,6 +181,79 @@ export default function CheckoutPage() {
                     <input type="tel" value={form.phone}
                       onChange={e => setForm(p => ({ ...p, phone: formatPhone(e.target.value) }))}
                       placeholder="(11) 99999-9999" className={inputClass} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Endereço de entrega */}
+            <div>
+              <h2 className="text-cream text-sm tracking-[0.3em] uppercase mb-2 pb-3 border-b border-gold-500/10">
+                Endereço de Entrega
+              </h2>
+              <p className="text-dark-500 text-xs mb-5">Opcional — ajuda a calcular o frete no futuro.</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">CEP</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={address.cep}
+                        onChange={e => {
+                          setAddress(p => ({ ...p, cep: formatCEP(e.target.value) }))
+                          setCepError('')
+                        }}
+                        onBlur={handleCepBlur}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        className={`${inputClass} pr-10`}
+                      />
+                      {cepLoading && (
+                        <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400 animate-spin" />
+                      )}
+                    </div>
+                    {cepError && <p className="text-red-400 text-xs mt-1">{cepError}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">UF</label>
+                    <input type="text" value={address.uf} maxLength={2}
+                      onChange={e => setAddress(p => ({ ...p, uf: e.target.value.toUpperCase() }))}
+                      placeholder="SP" className={inputClass} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Rua / Logradouro</label>
+                  <input type="text" value={address.rua}
+                    onChange={e => setAddress(p => ({ ...p, rua: e.target.value }))}
+                    placeholder="Nome da rua" className={inputClass} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Número</label>
+                    <input type="text" value={address.numero}
+                      onChange={e => setAddress(p => ({ ...p, numero: e.target.value }))}
+                      placeholder="123" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Complemento</label>
+                    <input type="text" value={address.complemento}
+                      onChange={e => setAddress(p => ({ ...p, complemento: e.target.value }))}
+                      placeholder="Apto, Bloco..." className={inputClass} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Bairro</label>
+                    <input type="text" value={address.bairro}
+                      onChange={e => setAddress(p => ({ ...p, bairro: e.target.value }))}
+                      placeholder="Seu bairro" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Cidade</label>
+                    <input type="text" value={address.cidade}
+                      onChange={e => setAddress(p => ({ ...p, cidade: e.target.value }))}
+                      placeholder="Sua cidade" className={inputClass} />
                   </div>
                 </div>
               </div>

@@ -6,7 +6,7 @@ import { sendEmail, customerOrderReceivedHtml } from '@/lib/email'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { items, payer } = body
+    const { items, payer, shipping_address } = body
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Carrinho vazio' }, { status: 400 })
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     })
 
     const orderTotal = items.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0)
-    const newOrder = {
+    const newOrder: any = {
       preference_id: result.id,
       items,
       payer,
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
       shipping_status: 'pending',
       created_at: new Date().toISOString(),
     }
+    if (shipping_address) newOrder.shipping_address = shipping_address
     const savedOrder = await saveOrder(newOrder)
 
     // E-mail "Pedido recebido" ao cliente (não bloqueia em caso de erro)

@@ -5,10 +5,12 @@ import { useState, useEffect } from 'react'
 import { ShoppingBag, Search, Menu, X, Sun, Moon, User } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { useTheme } from '@/lib/theme'
+import SearchModal from './SearchModal'
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const { getTotalItems, toggleCart } = useCartStore()
   const { theme, toggle: toggleTheme } = useTheme()
   const totalItems = getTotalItems()
@@ -63,6 +65,7 @@ export default function Header() {
           {/* Ações */}
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setSearchOpen(true)}
               className="text-[var(--c-nav)] hover:text-gold-400 transition-colors"
               aria-label="Buscar"
             >
@@ -113,6 +116,9 @@ export default function Header() {
           </div>
         </div>
       </header>
+
+      {/* Modal de busca */}
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
 
       {/* Menu Mobile */}
       {menuOpen && (

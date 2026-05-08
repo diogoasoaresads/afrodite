@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingBag, Heart } from 'lucide-react'
-import { useCartStore } from '@/lib/store'
+import { useCartStore, useWishlistStore } from '@/lib/store'
 import { formatPrice, calculateDiscount } from '@/lib/formatters'
 import type { Product } from '@/lib/products'
 
@@ -13,10 +13,17 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore()
+  const { ids: wishIds, toggle: toggleWish } = useWishlistStore()
+  const isFav = wishIds.includes(product.id)
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     addItem(product)
+  }
+
+  const handleFav = (e: React.MouseEvent) => {
+    e.preventDefault()
+    toggleWish(product.id)
   }
 
   return (
@@ -56,13 +63,15 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-          {/* Favoritar — desktop hover */}
+          {/* Favoritar — visível sempre quando favoritado, hover no desktop */}
           <button
-            onClick={e => e.preventDefault()}
-            className="absolute top-2 right-2 bg-dark-900/60 backdrop-blur-sm text-dark-200 hover:text-gold-400 p-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 hidden sm:flex"
-            aria-label="Favoritar"
+            onClick={handleFav}
+            className={`absolute top-2 right-2 bg-dark-900/60 backdrop-blur-sm p-1.5 transition-all duration-300 ${
+              isFav ? 'text-red-400 opacity-100' : 'text-dark-200 hover:text-red-400 opacity-0 group-hover:opacity-100 sm:flex hidden'
+            }`}
+            aria-label={isFav ? 'Remover dos favoritos' : 'Favoritar'}
           >
-            <Heart size={14} />
+            <Heart size={14} fill={isFav ? 'currentColor' : 'none'} />
           </button>
         </div>
 

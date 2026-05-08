@@ -174,12 +174,19 @@ export default function LoginPage() {
             </button>
 
             {mode === 'login' && (
-              <p className="text-center text-dark-500 text-xs mt-4">
-                Ainda não tem conta?{' '}
-                <button type="button" onClick={() => setMode('register')} className="text-gold-400 hover:underline">
-                  Cadastre-se grátis
-                </button>
-              </p>
+              <div className="text-center mt-4 space-y-2">
+                <p className="text-dark-500 text-xs">
+                  Ainda não tem conta?{' '}
+                  <button type="button" onClick={() => setMode('register')} className="text-gold-400 hover:underline">
+                    Cadastre-se grátis
+                  </button>
+                </p>
+                <p className="text-dark-600 text-xs">
+                  <Link href="/recuperar-senha" className="text-dark-400 hover:text-gold-400 transition-colors">
+                    Esqueci minha senha
+                  </Link>
+                </p>
+              </div>
             )}
           </form>
         </div>
