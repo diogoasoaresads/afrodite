@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  CreditCard, Store, Truck, Share2, Lock, Mail,
+  MessageCircle, Store, Truck, Share2, Lock, Mail,
   Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, ExternalLink
 } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
@@ -26,12 +26,9 @@ export default function Configuracoes() {
   const [status, setStatus] = useState<Record<SectionKey, SaveStatus>>({
     mercadopago: 'idle', loja: 'idle', frete: 'idle', social: 'idle', seguranca: 'idle', smtp: 'idle',
   })
-  const [showToken, setShowToken] = useState(false)
   const [showSmtpPass, setShowSmtpPass] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [testingMP, setTestingMP] = useState(false)
-  const [mpTestResult, setMpTestResult] = useState<'idle' | 'ok' | 'error'>('idle')
   const [testingEmail, setTestingEmail] = useState(false)
 
   useEffect(() => {
@@ -85,22 +82,6 @@ export default function Configuracoes() {
       showToast('Erro ao salvar. Tente novamente.', 'error')
       setTimeout(() => setStatus(s => ({ ...s, [section]: 'idle' })), 3000)
     }
-  }
-
-  const testMPConnection = async () => {
-    if (!settings?.mercadopago.accessToken) return
-    setTestingMP(true); setMpTestResult('idle')
-    try {
-      await fetch('/api/admin/configuracoes', {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mercadopago: settings.mercadopago }),
-      })
-      const res = await fetch('/api/admin/mp-test')
-      const ok = res.ok
-      setMpTestResult(ok ? 'ok' : 'error')
-      showToast(ok ? '✓ Mercado Pago conectado!' : 'Token inválido ou sem acesso.', ok ? 'success' : 'error')
-    } catch { setMpTestResult('error') }
-    finally { setTestingMP(false) }
   }
 
   const testEmail = async () => {
@@ -169,67 +150,14 @@ export default function Configuracoes() {
         <p className="text-dark-400 text-sm mt-1">Gerencie todas as integrações e dados da sua loja.</p>
       </div>
 
-      {/* ─── MERCADO PAGO ─────────────────────────────────────── */}
-      <Section title="Mercado Pago" icon={<CreditCard size={18} />} section="mercadopago">
-        <div className="p-3 bg-blue-500/5 border border-blue-500/20 flex items-start gap-3">
-          <ExternalLink size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-          <p className="text-blue-300 text-xs leading-relaxed">
-            Pegue suas credenciais em{' '}
-            <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noreferrer" className="underline hover:text-blue-200">
-              mercadopago.com.br/developers/panel
-            </a>{' '}→ Suas integrações → Credenciais de produção.
-          </p>
-        </div>
-
-        <div>
-          <label className={labelClass}>Access Token (privado — nunca compartilhe)</label>
-          <div className="relative">
-            <input type={showToken ? 'text' : 'password'} value={settings.mercadopago.accessToken}
-              onChange={e => update('mercadopago', 'accessToken', e.target.value)}
-              placeholder="APP_USR-xxxx-xxxx-xxxx-xxxx" className={`${inputClass} pr-10`} />
-            <button type="button" onClick={() => setShowToken(!showToken)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300">
-              {showToken ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label className={labelClass}>Public Key</label>
-          <input type="text" value={settings.mercadopago.publicKey}
-            onChange={e => update('mercadopago', 'publicKey', e.target.value)}
-            placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className={inputClass} />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Parcelas máximas</label>
-            <select value={settings.mercadopago.installments}
-              onChange={e => update('mercadopago', 'installments', Number(e.target.value))} className={inputClass}>
-              {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n}x</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass}>Desconto no PIX (%)</label>
-            <input type="number" min="0" max="30" step="0.5"
-              value={settings.mercadopago.pixDiscount}
-              onChange={e => update('mercadopago', 'pixDiscount', Number(e.target.value))} className={inputClass} />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 pt-1">
-          <button onClick={testMPConnection} disabled={testingMP || !settings.mercadopago.accessToken}
-            className="flex items-center gap-2 border border-dark-600 hover:border-gold-500 text-dark-300 hover:text-gold-400 px-4 py-2 text-xs transition-colors disabled:opacity-40">
-            {testingMP && <Loader2 size={13} className="animate-spin" />}
-            Testar Conexão
-          </button>
-          {mpTestResult === 'ok'    && <span className="text-green-400 text-xs flex items-center gap-1"><CheckCircle2 size={13} /> Conectado!</span>}
-          {mpTestResult === 'error' && <span className="text-red-400 text-xs flex items-center gap-1"><AlertCircle size={13} /> Token inválido.</span>}
-        </div>
-      </Section>
-
       {/* ─── DADOS DA LOJA ─────────────────────────────────────── */}
       <Section title="Dados da Loja" icon={<Store size={18} />} section="loja">
+        <div className="p-3 bg-green-500/5 border border-green-500/20 flex items-start gap-3">
+          <MessageCircle size={14} className="text-green-400 mt-0.5 flex-shrink-0" />
+          <p className="text-green-300 text-xs leading-relaxed">
+            O <strong>WhatsApp</strong> é o canal principal de vendas. Certifique-se de que o número está correto — ele é usado no botão "Finalizar pelo WhatsApp" do checkout.
+          </p>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Nome da Loja</label>

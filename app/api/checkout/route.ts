@@ -1,107 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MercadoPagoConfig, Preference } from 'mercadopago'
-import { getSettings } from '@/lib/settings'
-import { sendEmail, customerOrderReceivedHtml } from '@/lib/email'
 import { incrementCouponUse } from '@/lib/db'
 
+// Salva o pedido WhatsApp no histórico local (data/orders.json)
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { items, payer, shipping_address, coupon } = body
+    const { items, customerName, coupon } = body
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Carrinho vazio' }, { status: 400 })
     }
 
-    // Lê credenciais e configurações do settings.json (admin) com fallback para env
-    const settings = await getSettings()
-    const accessToken = settings.mercadopago.accessToken || process.env.MP_ACCESS_TOKEN || ''
-    const baseUrl     = settings.loja.siteUrl || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const installments = settings.mercadopago.installments || 12
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: 'Mercado Pago não configurado. Acesse Admin → Configurações e insira seu Access Token.' },
-        { status: 500 }
-      )
-    }
-
-    const client = new MercadoPagoConfig({ accessToken })
-    const preference = new Preference(client)
-
-    const result = await preference.create({
-      body: {
-        items: items.map((item: any) => ({
-          id:         item.id,
-          title:      item.title,
-          quantity:   item.quantity,
-          unit_price: item.unit_price,
-          currency_id: 'BRL',
-          category_id: 'fashion',
-        })),
-        payer: {
-          name:  payer.name,
-          email: payer.email,
-          identification: payer.identification,
-        },
-        payment_methods: {
-          excluded_payment_types: [],
-          installments,
-        },
-        back_urls: {
-          success: `${baseUrl}/pedido/sucesso`,
-          failure: `${baseUrl}/pedido/erro`,
-          pending: `${baseUrl}/pedido/pendente`,
-        },
-        auto_return: 'approved',
-        notification_url: `${baseUrl}/api/webhook`,
-        statement_descriptor: settings.loja.nome || 'AFRODITE JOIAS',
-      },
-    })
-
-    const orderTotal = items.reduce((s: number, i: any) => s + i.unit_price * i.quantity, 0)
+    const orderTotal    = items.reduce((s: number, i: any) => s + (i.unit_price ?? 0) * (i.quantity ?? 1), 0)
     const couponDiscount = coupon?.discountAmount ?? 0
-    const finalTotal = Math.max(0, orderTotal - couponDiscount)
+    const finalTotal    = Math.max(0, orderTotal - couponDiscount)
 
     const newOrder: any = {
-      preference_id: result.id,
+      id:          Date.now().toString(),
       items,
-      payer,
-      total: finalTotal,
-      status: 'pending',
-      shipping_status: 'pending',
-      created_at: new Date().toISOString(),
+      customerName: customerName ?? '',
+      total:       finalTotal,
+      status:      'whatsapp',
+      created_at:  new Date().toISOString(),
     }
-    if (shipping_address) newOrder.shipping_address = shipping_address
     if (coupon) newOrder.coupon = { id: coupon.couponId, code: coupon.code, discount: couponDiscount }
-    const savedOrder = await saveOrder(newOrder)
+
+    await saveOrder(newOrder)
 
     // Incrementa uso do cupom
     if (coupon?.couponId) {
       incrementCouponUse(coupon.couponId).catch(err => console.error('Erro ao incrementar cupom:', err))
     }
 
-    // E-mail "Pedido recebido" ao cliente (não bloqueia em caso de erro)
-    if (payer.email && settings.smtp?.host) {
-      sendEmail({
-        to: payer.email,
-        subject: `Recebemos seu pedido #${savedOrder.id} — ${settings.loja.nome}`,
-        html: customerOrderReceivedHtml(savedOrder, settings.loja.nome),
-      }).catch(err => console.error('Erro ao enviar e-mail de pedido recebido:', err))
-    }
-
-    return NextResponse.json({ id: result.id, init_point: result.init_point })
+    return NextResponse.json({ ok: true, orderId: newOrder.id })
   } catch (err: any) {
     console.error('Checkout error:', err)
     return NextResponse.json(
-      { error: err?.message || 'Erro interno ao processar pagamento' },
+      { error: err?.message || 'Erro interno' },
       { status: 500 }
     )
   }
 }
 
 async function saveOrder(order: any) {
-  const newOrder = { ...order, id: Date.now().toString() }
   try {
     const fs   = await import('fs/promises')
     const path = await import('path')
@@ -112,10 +53,9 @@ async function saveOrder(order: any) {
     } catch {
       await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true })
     }
-    orders.unshift(newOrder)
+    orders.unshift(order)
     await fs.writeFile(filePath, JSON.stringify(orders, null, 2))
   } catch (err) {
     console.error('Erro ao salvar pedido:', err)
   }
-  return newOrder
 }
