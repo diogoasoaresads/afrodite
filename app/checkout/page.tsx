@@ -3,46 +3,33 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ShieldCheck, Lock, Loader2, Tag, X } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Tag, X } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { formatPrice } from '@/lib/formatters'
-import { fetchCep } from '@/lib/cep'
 
 interface PublicSettings {
-  mercadopago: { publicKey: string; installments: number; pixDiscount: number }
+  loja: { whatsapp: string; nome: string }
   frete: { gratisPorValor: number; valorFixo: number }
-}
-
-interface CustomerForm { name: string; email: string; cpf: string; phone: string }
-interface AddressForm {
-  cep: string; rua: string; numero: string; complemento: string
-  bairro: string; cidade: string; uf: string
 }
 
 export default function CheckoutPage() {
   const { items, getTotalPrice } = useCartStore()
   const subtotal = getTotalPrice()
 
-  const [form, setForm]       = useState<CustomerForm>({ name: '', email: '', cpf: '', phone: '' })
-  const [address, setAddress] = useState<AddressForm>({
-    cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', uf: ''
-  })
-  const [cepLoading, setCepLoading] = useState(false)
-  const [cepError, setCepError]     = useState('')
+  const [name, setName]   = useState('')
+  const [phone, setPhone] = useState('')
 
   // Cupom
-  const [couponInput, setCouponInput] = useState('')
+  const [couponInput, setCouponInput]     = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
-  const [couponError, setCouponError] = useState('')
+  const [couponError, setCouponError]     = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<{
     couponId: string; code: string; discountAmount: number
   } | null>(null)
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [cfg, setCfg]         = useState<PublicSettings>({
-    mercadopago: { publicKey: '', installments: 12, pixDiscount: 5 },
-    frete:       { gratisPorValor: 500, valorFixo: 0 },
+  const [cfg, setCfg] = useState<PublicSettings>({
+    loja:  { whatsapp: '', nome: 'Afrodite Joias' },
+    frete: { gratisPorValor: 500, valorFixo: 0 },
   })
 
   useEffect(() => {
@@ -53,17 +40,11 @@ export default function CheckoutPage() {
   }, [])
 
   // Cálculo de frete
-  const freteGratis = cfg.frete.gratisPorValor === 0 || subtotal >= cfg.frete.gratisPorValor
-  const frete       = freteGratis ? 0 : cfg.frete.valorFixo
-  const total       = subtotal + frete
-
-  const couponDiscount = appliedCoupon?.discountAmount ?? 0
-  const totalAfterCoupon = Math.max(0, total - couponDiscount)
-
-  // Desconto PIX
-  const pixDiscount  = cfg.mercadopago.pixDiscount
-  const totalPix     = totalAfterCoupon * (1 - pixDiscount / 100)
-  const installments = cfg.mercadopago.installments
+  const freteGratis     = cfg.frete.gratisPorValor === 0 || subtotal >= cfg.frete.gratisPorValor
+  const frete           = freteGratis ? 0 : cfg.frete.valorFixo
+  const total           = subtotal + frete
+  const couponDiscount  = appliedCoupon?.discountAmount ?? 0
+  const totalFinal      = Math.max(0, total - couponDiscount)
 
   const applyCoupon = async () => {
     if (!couponInput.trim()) return
@@ -82,78 +63,47 @@ export default function CheckoutPage() {
     } finally { setCouponLoading(false) }
   }
 
-  const formatCPF = (v: string) =>
-    v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').slice(0, 14)
-
   const formatPhone = (v: string) =>
     v.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').slice(0, 15)
 
-  const formatCEP = (v: string) =>
-    v.replace(/\D/g, '').replace(/(\d{5})(\d{1,3})$/, '$1-$2').slice(0, 9)
+  const buildWhatsAppMessage = () => {
+    const greeting = name.trim()
+      ? `Olá, sou ${name.trim()}! Gostaria de fazer um pedido 😊`
+      : 'Olá! Gostaria de fazer um pedido 😊'
 
-  const handleCepBlur = async () => {
-    const cleaned = address.cep.replace(/\D/g, '')
-    if (cleaned.length !== 8) return
-    setCepLoading(true)
-    setCepError('')
-    const data = await fetchCep(cleaned)
-    if (!data) {
-      setCepError('CEP não encontrado.')
-    } else {
-      setAddress(prev => ({
-        ...prev,
-        rua: data.rua,
-        bairro: data.bairro,
-        cidade: data.cidade,
-        uf: data.uf,
-      }))
+    const itemLines = items
+      .map(i => `• ${i.quantity}x ${i.product.name}${i.size ? ` (${i.size})` : ''} — ${formatPrice(i.product.price * i.quantity)}`)
+      .join('\n')
+
+    let msg = `${greeting}\n\n🛍️ *Itens do Pedido:*\n${itemLines}`
+
+    if (frete > 0) {
+      msg += `\n\n📦 *Frete:* ${formatPrice(frete)}`
     }
-    setCepLoading(false)
+
+    if (couponDiscount > 0 && appliedCoupon) {
+      msg += `\n🏷️ *Cupom ${appliedCoupon.code}:* −${formatPrice(couponDiscount)}`
+    }
+
+    msg += `\n\n💰 *Total: ${formatPrice(totalFinal)}*`
+
+    if (phone.trim()) {
+      msg += `\n📱 *Meu telefone:* ${phone.trim()}`
+    }
+
+    msg += '\n\nPoderia me informar sobre formas de pagamento e prazo de entrega?'
+
+    return encodeURIComponent(msg)
   }
 
-  const isValid = form.name.trim().length > 2
-    && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
-    && form.cpf.replace(/\D/g, '').length === 11
-    && form.phone.replace(/\D/g, '').length >= 10
-
-  const handleCheckout = async () => {
-    if (!isValid) return
-    setLoading(true)
-    setError('')
-    try {
-      const shippingAddress = address.cep ? {
-        cep: address.cep,
-        rua: address.rua,
-        numero: address.numero,
-        complemento: address.complemento,
-        bairro: address.bairro,
-        cidade: address.cidade,
-        uf: address.uf,
-      } : undefined
-
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map(i => ({
-            id: i.product.id, title: i.product.name,
-            quantity: i.quantity, unit_price: i.product.price,
-          })),
-          payer: {
-            name: form.name, email: form.email,
-            identification: { type: 'CPF', number: form.cpf.replace(/\D/g, '') },
-          },
-          shipping_address: shippingAddress,
-          coupon: appliedCoupon ?? undefined,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Erro ao criar pagamento')
-      window.location.href = data.init_point
-    } catch (err: any) {
-      setError(err.message)
-      setLoading(false)
+  const handleWhatsApp = () => {
+    const whatsapp = cfg.loja.whatsapp.replace(/\D/g, '')
+    if (!whatsapp) {
+      alert('Número de WhatsApp da loja não configurado. Entre em contato pelo Instagram ou e-mail.')
+      return
     }
+    const url = `https://wa.me/${whatsapp}?text=${buildWhatsAppMessage()}`
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   if (items.length === 0) {
@@ -178,129 +128,49 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid md:grid-cols-5 gap-10">
-          {/* Formulário */}
+          {/* Formulário simples */}
           <div className="md:col-span-3 space-y-8">
-            {/* Dados pessoais */}
-            <div>
-              <h2 className="text-cream text-sm tracking-[0.3em] uppercase mb-6 pb-3 border-b border-gold-500/10">
-                Dados do Comprador
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Nome Completo *</label>
-                  <input type="text" value={form.name}
-                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder="Seu nome completo" className={inputClass} />
-                </div>
-                <div>
-                  <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">E-mail *</label>
-                  <input type="email" value={form.email}
-                    onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                    placeholder="seu@email.com" className={inputClass} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">CPF *</label>
-                    <input type="text" value={form.cpf}
-                      onChange={e => setForm(p => ({ ...p, cpf: formatCPF(e.target.value) }))}
-                      placeholder="000.000.000-00" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Telefone *</label>
-                    <input type="tel" value={form.phone}
-                      onChange={e => setForm(p => ({ ...p, phone: formatPhone(e.target.value) }))}
-                      placeholder="(11) 99999-9999" className={inputClass} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Endereço de entrega */}
             <div>
               <h2 className="text-cream text-sm tracking-[0.3em] uppercase mb-2 pb-3 border-b border-gold-500/10">
-                Endereço de Entrega
+                Seus Dados (opcional)
               </h2>
-              <p className="text-dark-500 text-xs mb-5">Opcional — ajuda a calcular o frete no futuro.</p>
+              <p className="text-dark-500 text-xs mb-5">
+                Preencha para personalizar a mensagem no WhatsApp. Não é obrigatório.
+              </p>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">CEP</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={address.cep}
-                        onChange={e => {
-                          setAddress(p => ({ ...p, cep: formatCEP(e.target.value) }))
-                          setCepError('')
-                        }}
-                        onBlur={handleCepBlur}
-                        placeholder="00000-000"
-                        maxLength={9}
-                        className={`${inputClass} pr-10`}
-                      />
-                      {cepLoading && (
-                        <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gold-400 animate-spin" />
-                      )}
-                    </div>
-                    {cepError && <p className="text-red-400 text-xs mt-1">{cepError}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">UF</label>
-                    <input type="text" value={address.uf} maxLength={2}
-                      onChange={e => setAddress(p => ({ ...p, uf: e.target.value.toUpperCase() }))}
-                      placeholder="SP" className={inputClass} />
-                  </div>
+                <div>
+                  <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Seu Nome</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Como gostaria de ser chamada?"
+                    className={inputClass}
+                  />
                 </div>
                 <div>
-                  <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Rua / Logradouro</label>
-                  <input type="text" value={address.rua}
-                    onChange={e => setAddress(p => ({ ...p, rua: e.target.value }))}
-                    placeholder="Nome da rua" className={inputClass} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Número</label>
-                    <input type="text" value={address.numero}
-                      onChange={e => setAddress(p => ({ ...p, numero: e.target.value }))}
-                      placeholder="123" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Complemento</label>
-                    <input type="text" value={address.complemento}
-                      onChange={e => setAddress(p => ({ ...p, complemento: e.target.value }))}
-                      placeholder="Apto, Bloco..." className={inputClass} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Bairro</label>
-                    <input type="text" value={address.bairro}
-                      onChange={e => setAddress(p => ({ ...p, bairro: e.target.value }))}
-                      placeholder="Seu bairro" className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Cidade</label>
-                    <input type="text" value={address.cidade}
-                      onChange={e => setAddress(p => ({ ...p, cidade: e.target.value }))}
-                      placeholder="Sua cidade" className={inputClass} />
-                  </div>
+                  <label className="block text-dark-300 text-xs tracking-wider uppercase mb-2">Seu Telefone</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={e => setPhone(formatPhone(e.target.value))}
+                    placeholder="(11) 99999-9999"
+                    className={inputClass}
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="bg-dark-800/50 border border-gold-500/10 p-5 flex items-start gap-4">
-              <Lock size={20} className="text-gold-400 flex-shrink-0 mt-0.5" />
+            <div className="bg-green-900/20 border border-green-500/20 p-5 flex items-start gap-4">
+              <MessageCircle size={22} className="text-green-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-cream text-sm font-semibold mb-1">Pagamento 100% Seguro</p>
+                <p className="text-cream text-sm font-semibold mb-1">Pagamento pelo WhatsApp</p>
                 <p className="text-dark-400 text-xs leading-relaxed">
-                  Dados protegidos com SSL. Pagamento processado pelo Mercado Pago — PIX, cartão de crédito/débito e boleto.
+                  Ao clicar no botão, você será redirecionada para o WhatsApp com o resumo do pedido já preenchido.
+                  Combinamos pagamento, endereço e envio direto na conversa. Aceitamos PIX, transferência e cartão.
                 </p>
               </div>
             </div>
-
-            {error && (
-              <div className="bg-red-900/30 border border-red-500/30 text-red-300 px-4 py-3 text-sm">{error}</div>
-            )}
           </div>
 
           {/* Resumo */}
@@ -385,29 +255,20 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between font-semibold text-lg border-t border-gold-500/10 pt-3">
                   <span className="text-cream">Total</span>
-                  <span className="text-gold-400">{formatPrice(totalAfterCoupon)}</span>
+                  <span className="text-gold-400">{formatPrice(totalFinal)}</span>
                 </div>
-                <p className="text-dark-500 text-xs">
-                  {installments}x de {formatPrice(totalAfterCoupon / installments)} sem juros no cartão
-                </p>
-                {pixDiscount > 0 && (
-                  <p className="text-green-400 text-xs font-semibold">
-                    ✓ {formatPrice(totalPix)} no PIX ({pixDiscount}% de desconto)
-                  </p>
-                )}
               </div>
 
-              <button onClick={handleCheckout} disabled={!isValid || loading}
-                className={`w-full flex items-center justify-center gap-2 py-4 font-semibold tracking-widest text-sm uppercase transition-all duration-300 ${
-                  isValid && !loading ? 'bg-[#009EE3] hover:bg-[#007FBF] text-white' : 'bg-dark-700 text-dark-500 cursor-not-allowed'
-                }`}>
-                {loading
-                  ? <span className="animate-pulse">Processando...</span>
-                  : <><ShieldCheck size={18} /> Pagar com Mercado Pago</>}
+              <button
+                onClick={handleWhatsApp}
+                className="w-full flex items-center justify-center gap-3 py-4 font-semibold tracking-widest text-sm uppercase transition-all duration-300 bg-[#25D366] hover:bg-[#1ebe5a] text-white"
+              >
+                <MessageCircle size={20} />
+                Finalizar pelo WhatsApp
               </button>
 
               <p className="text-dark-600 text-[10px] text-center mt-4">
-                Você será redirecionado para o ambiente seguro do Mercado Pago
+                Você será redirecionada para o WhatsApp com o pedido resumido
               </p>
             </div>
           </div>
