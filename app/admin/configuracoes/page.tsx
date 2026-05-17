@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import {
   MessageCircle, Store, Truck, Share2, Lock, Mail,
-  Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, ExternalLink
+  Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, ExternalLink,
+  Zap, ToggleLeft, ToggleRight, Send
 } from 'lucide-react'
 import { useToast } from '@/lib/toast-context'
 
@@ -14,6 +15,7 @@ interface Settings {
   social: { instagram: string; facebook: string }
   seguranca: { adminPassword: string }
   smtp: { host: string; port: number; user: string; pass: string; notifyEmail: string }
+  evolution: { enabled: boolean; url: string; apiKey: string; instance: string; ownerPhone: string }
 }
 
 type SectionKey = keyof Settings
@@ -24,18 +26,25 @@ export default function Configuracoes() {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState<Record<SectionKey, SaveStatus>>({
-    mercadopago: 'idle', loja: 'idle', frete: 'idle', social: 'idle', seguranca: 'idle', smtp: 'idle',
+    mercadopago: 'idle', loja: 'idle', frete: 'idle', social: 'idle', seguranca: 'idle', smtp: 'idle', evolution: 'idle',
   })
   const [showSmtpPass, setShowSmtpPass] = useState(false)
+  const [showEvolutionKey, setShowEvolutionKey] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [testingEmail, setTestingEmail] = useState(false)
+  const [testingEvolution, setTestingEvolution] = useState(false)
+  const [evolutionTestMsg, setEvolutionTestMsg] = useState<{ ok: boolean; message: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/configuracoes')
       .then(r => r.json())
       .then(data => {
-        setSettings({ smtp: { host: '', port: 587, user: '', pass: '', notifyEmail: '' }, ...data })
+        setSettings({
+          smtp: { host: '', port: 587, user: '', pass: '', notifyEmail: '' },
+          evolution: { enabled: false, url: '', apiKey: '', instance: '', ownerPhone: '' },
+          ...data,
+        })
         setLoading(false)
       })
   }, [])
@@ -97,6 +106,24 @@ export default function Configuracoes() {
       showToast(data.ok ? '✓ E-mail de teste enviado!' : (data.error || 'Erro ao enviar'), data.ok ? 'success' : 'error')
     } catch { showToast('Erro ao testar e-mail', 'error') }
     finally { setTestingEmail(false) }
+  }
+
+  const testEvolution = async () => {
+    if (!settings) return
+    setTestingEvolution(true)
+    setEvolutionTestMsg(null)
+    try {
+      // Salva as configurações atuais antes de testar
+      await fetch('/api/admin/configuracoes', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ evolution: settings.evolution }),
+      })
+      const res = await fetch('/api/admin/evolution-test', { method: 'POST' })
+      const data = await res.json()
+      setEvolutionTestMsg({ ok: data.ok, message: data.ok ? data.message : (data.error || 'Erro ao testar') })
+    } catch {
+      setEvolutionTestMsg({ ok: false, message: 'Falha na conexão com o servidor.' })
+    } finally { setTestingEvolution(false) }
   }
 
   if (loading) {
@@ -315,6 +342,109 @@ export default function Configuracoes() {
             {testingEmail && <Loader2 size={13} className="animate-spin" />}
             Enviar E-mail de Teste
           </button>
+        </div>
+      </Section>
+
+      {/* ─── EVOLUTION API ─────────────────────────────────────── */}
+      <Section title="Evolution API — Notificações WhatsApp" icon={<Zap size={18} />} section="evolution">
+        <div className="p-3 bg-green-500/5 border border-green-500/20 text-green-300 text-xs leading-relaxed">
+          <strong>Como funciona:</strong> Quando um cliente clica em "Finalizar pelo WhatsApp", o site salva o pedido e <em>automaticamente envia uma mensagem para você</em> com todos os detalhes — mesmo que o cliente não vá até o final no WhatsApp. Assim você pode chamar primeiro!
+        </div>
+
+        {/* Toggle ativo/inativo */}
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className="text-cream text-sm">Ativar notificações automáticas</p>
+            <p className="text-dark-500 text-xs">Receba mensagem WhatsApp a cada novo pedido</p>
+          </div>
+          <button
+            onClick={() => update('evolution', 'enabled', !settings.evolution.enabled)}
+            className="text-gold-400 hover:text-gold-300 transition-colors"
+          >
+            {settings.evolution.enabled
+              ? <ToggleRight size={36} className="text-green-400" />
+              : <ToggleLeft size={36} className="text-dark-500" />}
+          </button>
+        </div>
+
+        <div>
+          <label className={labelClass}>URL do servidor Evolution <span className="text-dark-600 normal-case tracking-normal">(sem barra no final)</span></label>
+          <input
+            type="url"
+            value={settings.evolution.url}
+            onChange={e => update('evolution', 'url', e.target.value)}
+            placeholder="https://evolution.seuservidor.com"
+            className={inputClass}
+          />
+          <a href="https://doc.evolution-api.com" target="_blank" rel="noreferrer"
+            className="text-blue-400 text-xs mt-1 inline-flex items-center gap-1 hover:underline">
+            <ExternalLink size={11} /> Documentação Evolution API
+          </a>
+        </div>
+
+        <div>
+          <label className={labelClass}>Nome da Instância</label>
+          <input
+            type="text"
+            value={settings.evolution.instance}
+            onChange={e => update('evolution', 'instance', e.target.value)}
+            placeholder="afrodite"
+            className={inputClass}
+          />
+          <p className="text-dark-500 text-xs mt-1">Exatamente como aparece no painel do Evolution.</p>
+        </div>
+
+        <div>
+          <label className={labelClass}>API Key <span className="text-dark-600 normal-case tracking-normal">(Global ou da instância)</span></label>
+          <div className="relative">
+            <input
+              type={showEvolutionKey ? 'text' : 'password'}
+              value={settings.evolution.apiKey}
+              onChange={e => update('evolution', 'apiKey', e.target.value)}
+              placeholder="••••••••••••••••••••"
+              className={`${inputClass} pr-10`}
+            />
+            <button type="button" onClick={() => setShowEvolutionKey(!showEvolutionKey)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300">
+              {showEvolutionKey ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>Seu número WhatsApp <span className="text-dark-600 normal-case tracking-normal">(para receber notificações)</span></label>
+          <input
+            type="text"
+            value={settings.evolution.ownerPhone}
+            onChange={e => update('evolution', 'ownerPhone', e.target.value.replace(/\D/g, ''))}
+            placeholder="5511999999999"
+            className={inputClass}
+          />
+          <p className="text-dark-500 text-xs mt-1">Código do país + DDD + número. Ex: 5511999999999</p>
+        </div>
+
+        {/* Resultado do teste */}
+        {evolutionTestMsg && (
+          <div className={`flex items-start gap-2 p-3 border text-xs ${
+            evolutionTestMsg.ok
+              ? 'bg-green-500/5 border-green-500/20 text-green-300'
+              : 'bg-red-500/5 border-red-500/20 text-red-300'
+          }`}>
+            {evolutionTestMsg.ok ? <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" /> : <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />}
+            <span>{evolutionTestMsg.message}</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-4 pt-1">
+          <button
+            onClick={testEvolution}
+            disabled={testingEvolution || !settings.evolution.url || !settings.evolution.apiKey || !settings.evolution.instance}
+            className="flex items-center gap-2 border border-dark-600 hover:border-gold-500 text-dark-300 hover:text-gold-400 px-4 py-2 text-xs transition-colors disabled:opacity-40"
+          >
+            {testingEvolution ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+            {testingEvolution ? 'Testando...' : 'Testar Conexão'}
+          </button>
+          <p className="text-dark-600 text-xs">Salva as configurações e envia mensagem de teste</p>
         </div>
       </Section>
 
