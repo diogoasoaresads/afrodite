@@ -38,6 +38,13 @@ export interface StoreSettings {
     pass: string          // senha ou app password
     notifyEmail: string   // e-mail para receber alertas de pedido
   }
+  evolution: {
+    enabled: boolean      // liga/desliga a integração
+    url: string           // ex: https://evolution.seuserver.com
+    apiKey: string        // API Key da instância
+    instance: string      // nome da instância no Evolution
+    ownerPhone: string    // número da dona para receber notificações (5511999999999)
+  }
 }
 
 const defaultSettings: StoreSettings = {
@@ -75,6 +82,13 @@ const defaultSettings: StoreSettings = {
     pass: process.env.SMTP_PASS || '',
     notifyEmail: process.env.SMTP_NOTIFY_EMAIL || '',
   },
+  evolution: {
+    enabled: false,
+    url: process.env.EVOLUTION_URL || '',
+    apiKey: process.env.EVOLUTION_API_KEY || '',
+    instance: process.env.EVOLUTION_INSTANCE || '',
+    ownerPhone: process.env.EVOLUTION_OWNER_PHONE || '',
+  },
 }
 
 export async function getSettings(): Promise<StoreSettings> {
@@ -89,6 +103,7 @@ export async function getSettings(): Promise<StoreSettings> {
       social:      { ...defaultSettings.social,      ...saved.social },
       seguranca:   { ...defaultSettings.seguranca,   ...saved.seguranca },
       smtp:        { ...defaultSettings.smtp,        ...saved.smtp },
+      evolution:   { ...defaultSettings.evolution,   ...saved.evolution },
     }
   } catch {
     return defaultSettings
@@ -104,6 +119,7 @@ export async function saveSettings(data: Partial<StoreSettings>): Promise<StoreS
     social:      { ...current.social,      ...data.social },
     seguranca:   { ...current.seguranca,   ...data.seguranca },
     smtp:        { ...current.smtp,        ...data.smtp },
+    evolution:   { ...current.evolution,   ...data.evolution },
   }
   await fs.mkdir(path.dirname(SETTINGS_FILE), { recursive: true })
   await fs.writeFile(SETTINGS_FILE, JSON.stringify(updated, null, 2))

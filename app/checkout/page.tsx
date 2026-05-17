@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, MessageCircle, Tag, X } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Tag, X, Loader2 } from 'lucide-react'
 import { useCartStore } from '@/lib/store'
 import { formatPrice } from '@/lib/formatters'
 
@@ -96,12 +96,39 @@ export default function CheckoutPage() {
     return encodeURIComponent(msg)
   }
 
-  const handleWhatsApp = () => {
+  const [sending, setSending] = useState(false)
+
+  const handleWhatsApp = async () => {
     const whatsapp = cfg.loja.whatsapp.replace(/\D/g, '')
     if (!whatsapp) {
       alert('Número de WhatsApp da loja não configurado. Entre em contato pelo Instagram ou e-mail.')
       return
     }
+
+    setSending(true)
+    try {
+      // Salva pedido no histórico e dispara notificação Evolution (se configurada)
+      await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(i => ({
+            title:      i.product.name,
+            quantity:   i.quantity,
+            unit_price: i.product.price,
+            size:       i.size ?? null,
+          })),
+          customerName:  name.trim() || undefined,
+          customerPhone: phone.trim() || undefined,
+          coupon: appliedCoupon ?? undefined,
+        }),
+      })
+    } catch {
+      // Silencia — não bloqueia o cliente de ir ao WhatsApp
+    } finally {
+      setSending(false)
+    }
+
     const url = `https://wa.me/${whatsapp}?text=${buildWhatsAppMessage()}`
     window.open(url, '_blank', 'noopener,noreferrer')
   }
@@ -261,10 +288,11 @@ export default function CheckoutPage() {
 
               <button
                 onClick={handleWhatsApp}
-                className="w-full flex items-center justify-center gap-3 py-4 font-semibold tracking-widest text-sm uppercase transition-all duration-300 bg-[#25D366] hover:bg-[#1ebe5a] text-white"
+                disabled={sending}
+                className="w-full flex items-center justify-center gap-3 py-4 font-semibold tracking-widest text-sm uppercase transition-all duration-300 bg-[#25D366] hover:bg-[#1ebe5a] text-white disabled:opacity-70 disabled:cursor-wait"
               >
-                <MessageCircle size={20} />
-                Finalizar pelo WhatsApp
+                {sending ? <Loader2 size={20} className="animate-spin" /> : <MessageCircle size={20} />}
+                {sending ? 'Preparando...' : 'Finalizar pelo WhatsApp'}
               </button>
 
               <p className="text-dark-600 text-[10px] text-center mt-4">
