@@ -26,6 +26,11 @@ async function writeJSON(filename: string, data: unknown): Promise<void> {
 
 // ─── Produtos ──────────────────────────────────────────────────────────────
 
+export interface TamanhoEstoque {
+  tamanho: string   // ex: "17", "18cm", "45cm"
+  estoque: number   // 0 = esgotado para este tamanho
+}
+
 export interface DBProduct {
   id: string
   name: string
@@ -42,6 +47,41 @@ export interface DBProduct {
   isSale?: boolean
   createdAt: string
   updatedAt: string
+
+  // ── Identificação ──────────────────────────────────────────────
+  sku?: string           // código interno, ex: "AFR-AN-001"
+  colecao?: string       // ex: "Coleção Primavera 2025"
+  tags?: string[]        // tags de busca, ex: ["presente", "casamento"]
+
+  // ── Composição do metal ────────────────────────────────────────
+  liga?: string          // ex: "Ouro 18k", "Prata 925", "Aço Inoxidável"
+  banho?: string         // ex: "Banho de Ouro 18k", "Banho de Ródio"
+  acabamento?: string    // ex: "Polido", "Fosco", "Acetinado"
+
+  // ── Pedras & Gemas ─────────────────────────────────────────────
+  pedras?: string        // ex: "Zircônia 4mm × 3 unidades"
+  // campo livre — a dona descreve as pedras do jeito que quiser
+
+  // ── Dimensões & Peso ───────────────────────────────────────────
+  peso?: string          // ex: "3,5 g"
+  dimensoes?: string     // ex: "Largura 4mm / Altura 6mm"
+  comprimento?: string   // para correntes/pulseiras, ex: "40cm, 45cm, 50cm"
+  ajustavel?: boolean    // tamanho ajustável
+
+  // ── Tamanhos com estoque por tamanho ───────────────────────────
+  // Se preenchido, substitui o inStock booleano simples
+  tamanhos?: TamanhoEstoque[]
+
+  // ── Cuidados & Garantia ────────────────────────────────────────
+  garantia?: string      // ex: "12 meses", "Vitalícia"
+  resistenciaAgua?: string // ex: "Uso diário", "Sem resistência"
+  cuidados?: string[]    // instruções selecionadas
+
+  // ── Personalização ─────────────────────────────────────────────
+  personalizavel?: boolean
+  tipoPersonalizacao?: string  // ex: "Gravação de nome"
+  prazoPersonalizacao?: number // dias úteis
+  obsPersonalizacao?: string   // instruções para o cliente
 }
 
 export async function getDBProducts(): Promise<DBProduct[]> {
