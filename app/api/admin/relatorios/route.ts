@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isValidSessionAsync } from '@/lib/admin-auth'
+import { isValidSessionAsync, ADMIN_COOKIE } from '@/lib/admin-auth'
 import { cookies } from 'next/headers'
 import { getOrders } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies()
-  const session = cookieStore.get('admin_session')?.value || ''
+  const session = cookieStore.get(ADMIN_COOKIE)?.value || ''
   if (!await isValidSessionAsync(session)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const days = parseInt(req.nextUrl.searchParams.get('days') || '30')

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isValidSessionAsync } from '@/lib/admin-auth'
+import { isValidSessionAsync, ADMIN_COOKIE } from '@/lib/admin-auth'
 import { cookies } from 'next/headers'
 import { updateCoupon, deleteCoupon } from '@/lib/db'
 
 async function auth() {
   const cookieStore = await cookies()
-  const session = cookieStore.get('admin_session')?.value || ''
+  const session = cookieStore.get(ADMIN_COOKIE)?.value || ''
   return isValidSessionAsync(session)
 }
 
